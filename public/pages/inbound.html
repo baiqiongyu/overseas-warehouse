@@ -597,12 +597,12 @@
           <el-table-column label="件数" width="72" align="right">
             <template slot-scope="s"><span class="inb-num">{{ s.row.total_qty }}</span></template>
           </el-table-column>
-          <el-table-column label="SKU" width="60" align="right">
+          <el-table-column label="SKU" width="72" align="right">
             <template slot-scope="s">
               <span class="inb-num" :title="s.row.attachment_count ? '含附件 ' + s.row.attachment_count + ' 个' : null">{{ s.row.sku_kinds }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="预计到仓" width="110">
+          <el-table-column label="预计到仓" width="124" class-name="col-expect" label-class-name="col-expect">
             <template slot-scope="s"><span class="inb-sum">{{ s.row.expect_time || '—' }}</span></template>
           </el-table-column>
           <el-table-column label="创建时间" width="142">
@@ -613,7 +613,7 @@
               <span class="inb-state" :class="'s' + s.row.state">{{ stateText(s.row.state) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="备注" min-width="160">
+          <el-table-column label="备注" min-width="132">
             <template slot-scope="s">
               <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
                           popper-class="inb-remark-tip" :open-delay="150">
