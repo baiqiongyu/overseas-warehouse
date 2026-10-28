@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>产品管理 - 海外仓系统</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/vendor/element-ui/theme-chalk/index.css">
 <link rel="stylesheet" href="assets/portal.css">
 <style>
 /* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用 */
@@ -47,7 +43,7 @@
 }
 .tbl-en { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tbl-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tbl-name .clr { color: #6E6A61; font-size: 12px; }
+.tbl-name .clr { color: #6B8299; font-size: 12px; }
 .tbl-date {
   font-size: 12px; color: var(--text-dark); font-variant-numeric: tabular-nums;
   white-space: nowrap; letter-spacing: .01em;
@@ -60,7 +56,7 @@
   white-space: nowrap;
 }
 .tbl-wh b { font-weight: 600; }
-.tbl-none { font-size: 12px; color: #B0AA9C; white-space: nowrap; }
+.tbl-none { font-size: 12px; color: #9AAEC1; white-space: nowrap; }
 .tbl-price { color: var(--accent-ink); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tbl-attr { display: block; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tbl-status { font-size: 12px; letter-spacing: .06em; font-weight: 600; white-space: nowrap; }
@@ -358,7 +354,7 @@
               <button type="button" class="rm" @click="form.image = ''" title="移除图片">×</button>
             </div>
           </div>
-          <div style="font-size:12px;color:#6E6A61;margin-top:8px">
+          <div style="font-size:12px;color:#6B8299;margin-top:8px">
             点击上传，支持 jpg / png / webp，不超过 5MB，1:1 图片展示效果最佳
           </div>
         </el-form-item>
@@ -398,11 +394,11 @@
         <el-form-item label="规格属性">
           <div class="attr-switches">
             <label class="asw" v-for="a in attrDefs" :key="a.key">
-              <el-switch v-model="form.attrs[a.key]" active-color="#2E4B3F" :disabled="formLock"></el-switch>
+              <el-switch v-model="form.attrs[a.key]" active-color="#0B2135" :disabled="formLock"></el-switch>
               {{ a.label }}
             </label>
           </div>
-          <div style="font-size:12px;color:#6E6A61">带电、液体等属性影响运输渠道选择与报关，按实际情况勾选</div>
+          <div style="font-size:12px;color:#6B8299">带电、液体等属性影响运输渠道选择与报关，按实际情况勾选</div>
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -423,16 +419,16 @@
         <el-form-item label="打印份数">
           <el-input-number v-model="printNums" :min="1" :max="100" :precision="0"
                            style="width:140px" @keyup.enter.native="confirmPrint"></el-input-number>
-          <span style="font-size:12px;color:#6E6A61;margin-left:10px">1 - 100 张</span>
+          <span style="font-size:12px;color:#6B8299;margin-left:10px">1 - 100 张</span>
         </el-form-item>
         <el-form-item label="产地标识">
-          <el-switch v-model="printMadeIn" active-color="#2E4B3F"></el-switch>
-          <span style="font-size:12px;color:#6E6A61;margin-left:10px">开启后在标签底部印「Made in China」</span>
+          <el-switch v-model="printMadeIn" active-color="#0B2135"></el-switch>
+          <span style="font-size:12px;color:#6B8299;margin-left:10px">开启后在标签底部印「Made in China」</span>
         </el-form-item>
         <el-form-item label="已选 SKU">
           <span style="font-size:13px;color:var(--ink);font-weight:600">{{ printIds.length }} 个</span>
-          <span v-if="printIds.length > 3" style="font-size:12px;color:#6E6A61;margin-left:8px">{{ printNames.slice(0,3).join('、') }} 等</span>
-          <span v-else style="font-size:12px;color:#6E6A61;margin-left:8px">{{ printNames.join('、') }}</span>
+          <span v-if="printIds.length > 3" style="font-size:12px;color:#6B8299;margin-left:8px">{{ printNames.slice(0,3).join('、') }} 等</span>
+          <span v-else style="font-size:12px;color:#6B8299;margin-left:8px">{{ printNames.join('、') }}</span>
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -443,8 +439,8 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script src="assets/vendor/vue/vue.min.js"></script>
+<script src="assets/vendor/element-ui/lib/index.js"></script>
 <script>
 const API_BASE = 'http://127.0.0.1:8088/customer';
 const token = localStorage.getItem('hw_token') || '';

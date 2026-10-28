@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>首页 - 海外仓系统</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/vendor/element-ui/theme-chalk/index.css">
 <link rel="stylesheet" href="assets/portal.css">
 <style>
 /* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用 */
@@ -44,10 +40,10 @@
         <div class="track"><div class="fill" :style="{ width: completeRate + '%' }"></div></div>
         <span class="num">{{ completeRate }}%</span>
       </div>
-      <p style="font-size:13px;color:#6E6A61;margin:12px 0 0" v-if="completeRate < 100">
-        税号、地址等资料尚未补全，<a href="profile.html" style="color:#A65E3F">去补全</a>——完整资料有助于入库预约与清关申报更顺畅。
+      <p style="font-size:13px;color:#6B8299;margin:12px 0 0" v-if="completeRate < 100">
+        税号、地址等资料尚未补全，<a href="profile.html" style="color:#0B7C72">去补全</a>——完整资料有助于入库预约与清关申报更顺畅。
       </p>
-      <p style="font-size:13px;color:#6E6A61;margin:12px 0 0" v-else>资料已完整，感谢配合。</p>
+      <p style="font-size:13px;color:#6B8299;margin:12px 0 0" v-else>资料已完整，感谢配合。</p>
     </div>
 
     <!-- 快捷入口 -->
@@ -72,8 +68,8 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script src="assets/vendor/vue/vue.min.js"></script>
+<script src="assets/vendor/element-ui/lib/index.js"></script>
 <script>
 const API_BASE = 'http://127.0.0.1:8088/customer';
 

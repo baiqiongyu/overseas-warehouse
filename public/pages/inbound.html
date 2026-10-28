@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>入库管理 - 海外仓系统</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/vendor/element-ui/theme-chalk/index.css">
 <link rel="stylesheet" href="assets/portal.css">
 <style>
 /* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用，挂载后 v-cloak 被移除自动显示 */
@@ -16,9 +12,9 @@
 
 /* ---------- 左侧状态导航（与 SKU 页同款） ---------- */
 .inb-layout { display: flex; gap: 20px; align-items: flex-start; }
-.inb-layout > .card { flex: 1; min-width: 0; margin-bottom: 0; }
+.inb-layout > .card { flex: 1; min-width: 0; margin-bottom: 0; padding: 16px; }
 .side-nav {
-  width: 176px; flex: none; background: #fff;
+  width: 150px; flex: none; background: #fff;
   border: 1px solid var(--hairline); border-radius: var(--r-md);
   padding: 14px 10px; position: sticky; top: 84px;
 }
@@ -66,6 +62,11 @@
 }
 .inb-table .el-table__header th .cell { padding: 0 8px; white-space: nowrap; }
 .inb-table .el-table__body td { font-size: 13px; color: var(--text-dark); }
+.inb-table .cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inb-table .el-table__header th .cell { overflow: visible; }
+.inb-no-wrap { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.inb-remk { font-style: normal; font-size: 10px; line-height: 14px; padding: 0 3px;
+  color: var(--accent-ink); background: rgba(13,148,136,.1); border-radius: 3px; flex: none; }
 .inb-table .el-table__row:hover > td { background: rgba(46, 75, 63, .035) !important; }
 .inb-no { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--ink); white-space: nowrap; }
 .inb-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
@@ -106,15 +107,16 @@
 .biz-tag.dropship  { background: rgba(217, 160, 91, .16); color: var(--accent-ink); }
 .biz-tag.carton    { background: rgba(46, 75, 63, .05); color: var(--text-muted); }
 .inb-state { font-size: 12px; letter-spacing: .06em; font-weight: 600; white-space: nowrap; }
-.inb-state.s10 { color: #B0AA9C; }
-.inb-state.s20 { color: #2F6EA5; }
+.inb-state.s10 { color: #9AAEC1; }
+.inb-state.s20 { color: #2B6CB0; }
 .inb-state.s30 { color: #2F8A4C; }
 .inb-state.s90 { color: var(--danger); }
-.inb-op { display: flex; gap: 2px; white-space: nowrap; }
+.inb-op { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; white-space: nowrap; }
 .inb-op button {
+  flex: none; min-width: 36px; text-align: center; box-sizing: border-box;
   background: none; border: 1px solid transparent; border-radius: 5px; cursor: pointer;
   font-size: 12px; color: var(--text-muted); font-family: var(--font-body);
-  padding: 3px 3px; transition: all var(--dur-fast) ease-out;
+  padding: 3px 4px; line-height: 18px; white-space: nowrap; transition: all var(--dur-fast) ease-out;
 }
 .inb-op button:hover { color: var(--ink); border-color: var(--hairline); background: var(--paper-2); }
 .inb-op button.warn:hover { color: var(--danger); border-color: rgba(180, 83, 58, .3); }
@@ -542,13 +544,19 @@
         <el-table ref="tbl" class="inb-table" :data="rows" v-loading="loading"
                   @selection-change="onSelect"
                   empty-text="还没有入库单，点右上角「新建入库单」开始第一批入仓">
-          <el-table-column type="selection" width="44" align="center" :selectable="canSelect"></el-table-column>
-          <el-table-column label="入库单号" width="120">
+          <el-table-column type="selection" width="38" align="center" :selectable="canSelect"></el-table-column>
+          <el-table-column label="入库单号" width="146">
             <template slot-scope="s">
-              <div class="inb-no">{{ s.row.order_no }}</div>
+              <div class="inb-no-wrap">
+                <span class="inb-no">{{ s.row.order_no }}</span>
+                <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
+                            popper-class="inb-remark-tip" :open-delay="150">
+                  <i class="inb-remk">注</i>
+                </el-tooltip>
+              </div>
             </template>
           </el-table-column>
-          <el-table-column label="客户单号" min-width="100">
+          <el-table-column label="客户单号" width="92">
             <template slot-scope="s">
               <el-tooltip v-if="s.row.ref_no" :content="s.row.ref_no" placement="top"
                           popper-class="inb-tip-popper" :open-delay="250">
@@ -557,7 +565,7 @@
               <span class="inb-none" v-else>—</span>
             </template>
           </el-table-column>
-          <el-table-column label="目标仓库" width="74">
+          <el-table-column label="目标仓库" width="94">
             <template slot-scope="s">
               <el-tooltip :content="s.row.warehouse_name + '（' + s.row.warehouse_code + '）'" placement="top"
                           popper-class="inb-tip-popper" :open-delay="300">
@@ -565,14 +573,14 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column label="业务线" width="62" align="center">
+          <el-table-column label="业务线" width="66" align="center">
             <template slot-scope="s">
               <span class="biz-tag" :class="s.row.biz_type === 1 ? 'transfer' : 'dropship'">
                 {{ s.row.biz_type === 1 ? '中转' : '代发' }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="到仓形态" width="102">
+          <el-table-column label="到仓形态" width="104">
             <template slot-scope="s">
               <div class="inb-mode">
                 <span class="biz-tag" :class="modeClass(s.row.handling_type)">{{ handlingText(s.row.handling_type) }}</span>
@@ -589,38 +597,29 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="箱数" width="44" align="right">
+          <el-table-column label="箱数" width="48" align="right">
             <template slot-scope="s"><span class="inb-num">{{ s.row.box_count }}</span></template>
           </el-table-column>
-          <el-table-column label="件数" width="52" align="right">
+          <el-table-column label="件数" width="54" align="right">
             <template slot-scope="s"><span class="inb-num">{{ s.row.total_qty }}</span></template>
           </el-table-column>
-          <el-table-column label="SKU" width="44" align="right">
+          <el-table-column label="SKU" width="46" align="right">
             <template slot-scope="s">
               <span class="inb-num" :title="s.row.attachment_count ? '含附件 ' + s.row.attachment_count + ' 个' : null">{{ s.row.sku_kinds }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="预计到仓" width="86">
+          <el-table-column label="预计到仓" width="92">
             <template slot-scope="s"><span class="inb-sum">{{ s.row.expect_time || '—' }}</span></template>
           </el-table-column>
-          <el-table-column label="创建时间" width="116">
+          <el-table-column label="创建时间" width="108">
             <template slot-scope="s"><span class="inb-time" :title="s.row.create_time">{{ (s.row.create_time || '').slice(0, 16) || '—' }}</span></template>
           </el-table-column>
-          <el-table-column label="备注" min-width="50">
-            <template slot-scope="s">
-              <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
-                          popper-class="inb-remark-tip" :open-delay="150">
-                <div class="inb-remark">{{ s.row.remark }}</div>
-              </el-tooltip>
-              <span class="inb-none" v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="84" align="center">
+                    <el-table-column label="状态" width="82" align="center">
             <template slot-scope="s">
               <span class="inb-state" :class="'s' + s.row.state">{{ stateText(s.row.state) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="168" fixed="right">
+          <el-table-column label="操作" width="214" fixed="right">
             <template slot-scope="s">
               <div class="inb-op">
                 <button type="button" @click="openDetail(s.row)">详情</button>
@@ -1118,8 +1117,8 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script src="assets/vendor/vue/vue.min.js"></script>
+<script src="assets/vendor/element-ui/lib/index.js"></script>
 <script>
 const API_BASE = 'http://127.0.0.1:8088/customer';
 const token = localStorage.getItem('hw_token') || '';
