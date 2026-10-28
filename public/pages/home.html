@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页 - 海外仓系统</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/portal.css">
+<style>
+/* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用 */
+[v-cloak] { display: none !important; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand"><span class="mark">仓</span><span class="name">海外仓系统 · 货主门户</span></div>
+    <nav class="nav">
+      <a href="home.html" class="active">首页</a>
+      <a href="profile.html">企业资料</a>
+      <a href="sku.html">产品管理</a>
+      <a href="inbound.html">入库管理</a>
+    </nav>
+    <div class="who">
+      <span><b>{{ user.realname }}</b>（{{ user.customer_code }}）</span>
+      <el-button size="mini" @click="logout">退出登录</el-button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-head">
+      <h1>工作台</h1>
+      <span class="sub">欢迎回来，{{ user.customer_name }}</span>
+    </div>
+
+    <!-- 资料完整度 -->
+    <div class="card">
+      <h3>企业资料完整度</h3>
+      <div class="complete-bar">
+        <div class="track"><div class="fill" :style="{ width: completeRate + '%' }"></div></div>
+        <span class="num">{{ completeRate }}%</span>
+      </div>
+      <p style="font-size:13px;color:#6E6A61;margin:12px 0 0" v-if="completeRate < 100">
+        税号、地址等资料尚未补全，<a href="profile.html" style="color:#A65E3F">去补全</a>——完整资料有助于入库预约与清关申报更顺畅。
+      </p>
+      <p style="font-size:13px;color:#6E6A61;margin:12px 0 0" v-else>资料已完整，感谢配合。</p>
+    </div>
+
+    <!-- 快捷入口 -->
+    <div class="quick-grid">
+      <a class="quick-card" href="profile.html">
+        <div class="qc-title">企业资料</div>
+        <div class="qc-desc">维护公司名称、联系人、税号与收货地址，注册后补充的信息将用于单据与清关。</div>
+      </a>
+      <a class="quick-card" href="sku.html">
+        <div class="qc-title">产品管理（SKU）</div>
+        <div class="qc-desc">维护商品编码、条码、品名规格与重量体积，入库上架、出库拣货都以此为准。</div>
+      </a>
+      <a class="quick-card" href="inbound.html">
+        <div class="qc-title">入库管理</div>
+        <div class="qc-desc">创建入库单、选择仓库与业务线（中转 / 代发）、预约到仓时间并上传装箱单等附件。</div>
+      </a>
+      <a class="quick-card" href="javascript:;">
+        <div class="qc-title">出库 / 库存</div>
+        <div class="qc-desc">业务单据模块开发中，敬请期待。</div>
+      </a>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+const API_BASE = 'http://127.0.0.1:8088/customer';
+
+new Vue({
+  el: '#app',
+  data: {
+    token: localStorage.getItem('hw_token') || '',
+    user: {},
+    completeRate: 0
+  },
+  created: function () {
+    if (!this.token) { location.href = 'login.html'; return; }
+    try { this.user = JSON.parse(localStorage.getItem('hw_user') || '{}'); }
+    catch (e) { this.user = {}; }
+    this.loadProfile();
+  },
+  methods: {
+    loadProfile: function () {
+      var vm = this;
+      fetch(API_BASE + '/profile', { headers: { token: this.token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) { vm.completeRate = j.data.complete_rate || 0; }
+        })
+        .catch(function () {});
+    },
+    logout: function () {
+      var vm = this;
+      this.$confirm('确定退出登录吗？', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API_BASE + '/auth/logout', {
+            method: 'POST',
+            headers: { token: vm.token }
+          });
+        })
+        .catch(function () {})
+        .finally(function () {
+          localStorage.removeItem('hw_token');
+          localStorage.removeItem('hw_user');
+          location.href = 'login.html';
+        });
+    }
+  }
+});
+</script>
+</body>
+</html>

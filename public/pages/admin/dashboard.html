@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页概览 - 运营后台</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+[v-cloak] { display: none !important; }
+.hello { margin: 8px 4px 22px; }
+.hello h1 { font-family: var(--font-display); font-size: 24px; color: var(--ink); margin-bottom: 6px; }
+.hello p { font-size: 13px; color: var(--text-muted); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.card-k { background: #fff; border: 1px solid rgba(42,38,32,.1); border-radius: 10px; padding: 18px 20px; }
+.card-k .t { font-size: 12px; color: var(--text-muted); letter-spacing: .08em; margin-bottom: 8px; }
+.card-k .v { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--ink); }
+.card-k .s { font-size: 12px; color: #B0AA9C; margin-top: 4px; }
+.todo { margin-top: 22px; background: #fff; border: 1px solid rgba(42,38,32,.1); border-radius: 10px; padding: 18px 20px; }
+.todo h3 { font-size: 14px; color: var(--ink); margin-bottom: 10px; }
+.todo li { font-size: 13px; color: var(--text-dark); line-height: 2; list-style: none; }
+.todo li i { color: var(--accent-ink); margin-right: 8px; }
+.todo li.done { color: var(--text-muted); text-decoration: line-through; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <div class="container" style="max-width:1200px;margin-top:8px">
+    <div class="hello">
+      <h1>{{ greeting }}，{{ user.realname || '' }}</h1>
+      <p>今天也要把每一件货安排得明明白白。当前角色：{{ user.is_super ? '超级管理员' : (user.role_name || '未分配') }}</p>
+    </div>
+    <div class="cards">
+      <div class="card-k"><div class="t">今日待收货</div><div class="v">—</div><div class="s">收货模块开发中</div></div>
+      <div class="card-k"><div class="t">在库库存</div><div class="v">—</div><div class="s">库存模块开发中</div></div>
+      <div class="card-k"><div class="t">今日出库</div><div class="v">—</div><div class="s">出库模块规划中</div></div>
+      <div class="card-k"><div class="t">本月账单</div><div class="v">—</div><div class="s">计费模块规划中</div></div>
+    </div>
+    <div class="todo">
+      <h3>建设进度</h3>
+      <ul>
+        <li class="done"><i class="el-icon-check"></i>货主门户：注册 / 登录 / SKU 档案 / 入库申报（三形态 + 箱唛）</li>
+        <li class="done"><i class="el-icon-check"></i>运营后台：RBAC（员工 / 角色 / 菜单权限）</li>
+        <li><i class="el-icon-more"></i>收货作业：按箱唛扫码收货、差异登记（下一个模块）</li>
+        <li><i class="el-icon-more"></i>库位 / 库存 / 上架</li>
+        <li><i class="el-icon-more"></i>代发出库与计费</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script>
+var h = new Date().getHours();
+new Vue({
+  el: '#app',
+  data: {
+    user: JSON.parse(localStorage.getItem('hw_admin_user') || '{}'),
+    greeting: h < 6 ? '凌晨好' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
+  }
+});
+</script>
+</body>
+</html>

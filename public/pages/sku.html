@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品管理 - 海外仓系统</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/portal.css">
+<style>
+/* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用 */
+[v-cloak] { display: none !important; }
+
+/* ---------- SKU 页专属：列表表格 ---------- */
+/* 表格主题化：表头/边框对齐设计系统 */
+.sku-table { width: 100%; }
+.sku-table .el-table__header th {
+  background: var(--paper-2) !important; color: var(--ink);
+  font-weight: 600; font-size: 12px; letter-spacing: .06em;
+}
+.sku-table .el-table__body td { font-size: 13px; color: var(--text-dark); }
+.sku-table .el-table__row:hover > td { background: rgba(46, 75, 63, .035) !important; }
+
+/* 单元格内的小排版 */
+.tbl-pic {
+  width: 52px; height: 52px; border-radius: 8px; overflow: hidden;
+  background: var(--paper-2); display: grid; place-items: center;
+  border: 1px solid var(--hairline);
+}
+.tbl-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tbl-pic .ph {
+  font-family: var(--font-display); font-size: 18px; font-weight: 700;
+  color: rgba(46, 75, 63, .2); user-select: none;
+}
+.tbl-code {
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+  color: var(--ink); letter-spacing: .02em;
+  white-space: nowrap;
+}
+.tbl-barcode {
+  font-size: 11px; color: var(--text-muted); letter-spacing: .06em;
+  font-variant-numeric: tabular-nums; margin-top: 2px;
+  white-space: nowrap;
+}
+.tbl-en { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbl-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbl-name .clr { color: #6E6A61; font-size: 12px; }
+.tbl-date {
+  font-size: 12px; color: var(--text-dark); font-variant-numeric: tabular-nums;
+  white-space: nowrap; letter-spacing: .01em;
+}
+.tbl-num { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl-num b { color: var(--text-dark); font-weight: 500; }
+.tbl-wh {
+  font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums;
+  background: rgba(46, 75, 63, .06); border-radius: 6px; padding: 3px 8px; display: inline-block;
+  white-space: nowrap;
+}
+.tbl-wh b { font-weight: 600; }
+.tbl-none { font-size: 12px; color: #B0AA9C; white-space: nowrap; }
+.tbl-price { color: var(--accent-ink); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl-attr { display: block; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbl-status { font-size: 12px; letter-spacing: .06em; font-weight: 600; white-space: nowrap; }
+.tbl-status.on  { color: #2F8A4C; }
+.tbl-status.off { color: var(--danger); }
+
+/* ---------- 左侧状态导航 ---------- */
+.sku-layout { display: flex; gap: 20px; align-items: flex-start; }
+.sku-layout > .card { flex: 1; min-width: 0; margin-bottom: 0; padding: 18px 20px; }
+.side-nav {
+  width: 156px; flex: none; background: #fff;
+  border: 1px solid var(--hairline); border-radius: var(--r-md);
+  padding: 14px 10px; position: sticky; top: 84px;
+}
+.side-nav .side-title {
+  font-size: 12px; color: var(--text-muted); letter-spacing: .1em;
+  padding: 2px 12px 10px; border-bottom: 1px solid var(--hairline); margin-bottom: 8px;
+}
+.side-nav a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; margin-bottom: 2px; border-radius: 6px;
+  font-size: 14px; color: var(--text-dark); cursor: pointer; user-select: none;
+  transition: background-color var(--dur-fast) ease-out;
+}
+.side-nav a:hover { background: var(--paper-2); }
+.side-nav a.active {
+  background: rgba(46, 75, 63, .08); color: var(--ink); font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.side-nav a .n { margin-left: auto; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.side-nav a.active .n { color: var(--ink-2); font-weight: 600; }
+.side-nav .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.side-nav .dot.on { background: #2F8A4C; }
+.side-nav .dot.off { background: var(--danger); }
+.tbl-op { display: flex; gap: 4px; white-space: nowrap; }
+.tbl-op button {
+  background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  font-size: 12px; color: var(--text-muted); font-family: var(--font-body);
+  padding: 3px 10px; transition: all var(--dur-fast) ease-out;
+}
+.tbl-op button:hover { color: var(--ink); border-color: var(--hairline); background: var(--paper-2); }
+.tbl-op button.warn:hover { color: var(--danger); border-color: rgba(180, 83, 58, .3); }
+
+/* 批量操作条 */.batch-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; margin-bottom: 12px;
+  background: rgba(217, 160, 91, .1); border: 1px solid rgba(166, 94, 63, .22); border-radius: 8px;
+  font-size: 13px; color: var(--ink-2);
+}
+.batch-bar .cnt { font-weight: 700; color: var(--accent-ink); }
+
+/* 图片列：el-image 适配 */
+.tbl-pic.el-image { display: block; }
+.tbl-pic.el-image img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.tbl-pic.ph-slot { display: grid; place-items: center; }
+
+/* ---------- 弹窗表单 ---------- */
+.img-editor { display: flex; flex-wrap: wrap; gap: 10px; }
+.img-editor .img-item {
+  position: relative; width: 88px; height: 88px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--hairline); background: var(--paper-2);
+}
+.img-editor .img-item img { width: 100%; height: 100%; object-fit: cover; }
+.img-editor .img-item .rm {
+  position: absolute; right: 2px; top: 2px; width: 20px; height: 20px;
+  border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(15, 30, 20, .6); color: #fff; font-size: 12px; line-height: 1;
+}
+.img-editor .img-item.main::after {
+  content: "主图"; position: absolute; left: 0; bottom: 0; right: 0;
+  background: rgba(46, 75, 63, .78); color: #F4F1E8;
+  font-size: 10px; text-align: center; padding: 1px 0; letter-spacing: .1em;
+}
+.img-add {
+  width: 88px; height: 88px; border: 1px dashed rgba(46, 75, 63, .35);
+  border-radius: 8px; background: none; cursor: pointer;
+  color: var(--ink-2); font-size: 12px; display: grid; place-items: center; gap: 2px;
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.img-add:hover { border-color: var(--accent-ink); background: rgba(217, 160, 91, .08); }
+
+/* 上传块（el-upload 自定义） */
+.img-uploader .el-upload {
+  width: 96px; height: 96px; border: 1px dashed rgba(46, 75, 63, .4);
+  border-radius: 8px; background: var(--paper-2); cursor: pointer;
+  display: grid; place-items: center;
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.img-uploader .el-upload:hover {
+  border-color: var(--accent-ink); background: rgba(217, 160, 91, .08);
+}
+.img-up-icon { font-size: 26px; color: var(--ink-2); }
+
+.attr-switches { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 4px 0 2px; }
+.attr-switches .asw { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-dark); }
+
+.lock-hint {
+  background: rgba(217, 160, 91, .1); border: 1px solid rgba(166, 94, 63, .22);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 18px;
+  font-size: 12.5px; line-height: 1.7; color: var(--ink-2);
+}
+
+@media (max-width: 720px) {
+  .batch-bar { flex-wrap: wrap; }
+  .sku-layout { flex-direction: column; }
+  .side-nav { width: 100%; position: static; display: flex; gap: 4px; align-items: center; }
+  .side-nav .side-title { border: none; padding: 0 8px 0 4px; margin: 0; }
+  .side-nav a { margin: 0; padding: 7px 10px; }
+}
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand"><span class="mark">仓</span><span class="name">海外仓系统 · 货主门户</span></div>
+    <nav class="nav">
+      <a href="home.html">首页</a>
+      <a href="profile.html">企业资料</a>
+      <a href="sku.html" class="active">产品管理</a>
+      <a href="inbound.html">入库管理</a>
+    </nav>
+    <div class="who">
+      <span><b>{{ user.realname }}</b>（{{ user.customer_code }}）</span>
+      <el-button size="mini" @click="logout">退出登录</el-button>
+    </div>
+  </header>
+
+  <main class="container wide">
+    <div class="page-head">
+      <h1>产品管理</h1>
+      <span class="sub">共 {{ total }} 个 SKU · 条码由系统按「货主编码-SKU编码」自动生成</span>
+    </div>
+
+    <div class="sku-layout">
+      <!-- 左侧状态导航 -->
+      <aside class="side-nav">
+        <div class="side-title">产品列表</div>
+        <a :class="{ active: statusFilter === '' }" @click="filterStatus('')">
+          <span>全部 SKU</span><span class="n">{{ stats.all }}</span>
+        </a>
+        <a :class="{ active: statusFilter === '1' }" @click="filterStatus('1')">
+          <span class="dot on"></span><span>启用</span><span class="n">{{ stats.on }}</span>
+        </a>
+        <a :class="{ active: statusFilter === '0' }" @click="filterStatus('0')">
+          <span class="dot off"></span><span>停用</span><span class="n">{{ stats.off }}</span>
+        </a>
+      </aside>
+
+      <section class="card">
+      <div class="toolbar">
+        <el-input v-model.trim="keyword" placeholder="SKU 编码 / 品名 / 条码" clearable
+                  style="width:250px" @keyup.enter.native="search" @clear="search"></el-input>
+        <el-date-picker v-model="dateRange" type="daterange" unlink-panels
+                        value-format="yyyy-MM-dd" range-separator="至"
+                        start-placeholder="创建起始日" end-placeholder="创建截止日"
+                        :picker-options="dateShortcuts" clearable
+                        style="width:300px" @change="search"></el-date-picker>
+        <el-button icon="el-icon-search" @click="search">查询</el-button>
+        <el-button icon="el-icon-refresh" @click="resetFilter">重置</el-button>
+        <div class="spacer"></div>
+        <button class="btn-primary" type="button" @click="openDialog()">+ 新增 SKU</button>
+      </div>
+
+      <!-- 批量操作条（勾选后出现） -->
+      <div class="batch-bar" v-if="selected.length > 0">
+        <span>已选 <span class="cnt">{{ selected.length }}</span> 项</span>
+        <el-button size="mini" icon="el-icon-circle-check" @click="batchStatus(1)">批量启用</el-button>
+        <el-button size="mini" icon="el-icon-remove-outline" @click="batchStatus(0)">批量停用</el-button>
+        <el-button size="mini" type="danger" plain icon="el-icon-delete" @click="batchDelete">批量删除</el-button>
+        <el-button size="mini" icon="el-icon-printer" @click="printLabels(selected)">打印标签</el-button>
+        <div style="flex:1"></div>
+        <el-button size="mini" @click="clearSelection">取消选择</el-button>
+      </div>
+
+      <el-table ref="skuTable" class="sku-table" :data="rows" v-loading="loading"
+                @selection-change="onSelectionChange" empty-text="还没有 SKU，点右上角「新增 SKU」建立第一个商品">
+        <el-table-column type="selection" width="44" align="center"></el-table-column>
+        <el-table-column label="图片" width="72" align="center">
+          <template slot-scope="s">
+            <el-image v-if="s.row.image" class="tbl-pic" :src="s.row.image"
+                      :preview-src-list="[s.row.image]" fit="cover">
+              <div slot="error" class="tbl-pic ph-slot">仓</div>
+            </el-image>
+            <div v-else class="tbl-pic"><span class="ph">仓</span></div>
+          </template>
+        </el-table-column>
+        <el-table-column label="SKU 编码 / 条码" min-width="200">
+          <template slot-scope="s">
+            <div class="tbl-code">{{ s.row.sku_code }}</div>
+            <div class="tbl-barcode">{{ s.row.barcode }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="品名" min-width="228">
+          <template slot-scope="s">
+            <div class="tbl-name">{{ s.row.name_cn }}<span v-if="s.row.color" class="clr"> · {{ s.row.color }}</span></div>
+            <div class="tbl-en">{{ s.row.name_en }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="客户申报" min-width="200">
+          <template slot-scope="s">
+            <div class="tbl-num"><b>{{ s.row.weight }}</b> kg</div>
+            <div class="tbl-num"><b>{{ s.row.length }}×{{ s.row.width }}×{{ s.row.height }}</b> cm</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="仓库实测" min-width="215">
+          <template slot-scope="s">
+            <div v-if="s.row.wh_weight" class="tbl-wh">
+              {{ s.row.wh_weight }} kg · {{ s.row.wh_length }}×{{ s.row.wh_width }}×{{ s.row.wh_height }} cm
+            </div>
+            <span v-else class="tbl-none">未实测</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="属性" width="124">
+          <template slot-scope="s">
+            <span v-if="attrLabels(s.row).length" class="tbl-attr">{{ attrLabels(s.row).join(' / ') }}</span>
+            <span v-else class="tbl-none">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="申报价值" width="100" align="right">
+          <template slot-scope="s"><span class="tbl-price">${{ s.row.declare_value }}</span></template>
+        </el-table-column>
+        <el-table-column label="创建时间" width="132" align="center">
+          <template slot-scope="s">
+            <div class="tbl-date">{{ fmtDate(s.row.create_time) }} {{ fmtClock(s.row.create_time) }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="86" align="center">
+          <template slot-scope="s">
+            <span class="tbl-status" :class="s.row.status === 1 ? 'on' : 'off'">
+              {{ s.row.status === 1 ? '● 启用' : '○ 停用' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="248" fixed="right">
+          <template slot-scope="s">
+            <div class="tbl-op">
+              <button type="button" @click="openDialog(s.row)">编辑</button>
+              <button type="button" @click="printLabels([s.row])">打印</button>
+              <button type="button" @click="toggleStatus(s.row)">{{ s.row.status === 1 ? '停用' : '启用' }}</button>
+              <button type="button" class="warn" @click="remove(s.row)">删除</button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-pagination background layout="total, prev, pager, next, sizes"
+                     :total="total" :current-page.sync="page" :page-size.sync="limit"
+                     :page-sizes="[20, 50, 100]" @current-change="load" @size-change="load"
+                     style="margin-top:16px">
+      </el-pagination>
+      </section>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog :title="form.id ? '编辑 SKU' : '新增 SKU'" :visible.sync="dialogVisible" width="760px" top="6vh">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <div v-if="formLock" class="lock-hint">
+          编辑模式：仅可修改颜色、商品图片、中英文描述；SKU 编码、品名、重量、尺寸、申报价值、海关编码、属性在创建后不可更改。如需调整请删除后重新创建。
+        </div>
+        <div class="form-row">
+          <el-form-item label="SKU 编码" prop="sku_code">
+            <el-input v-model.trim="form.sku_code" :disabled="!!form.id"
+                      placeholder="字母数字-_." maxlength="64"></el-input>
+          </el-form-item>
+          <el-form-item label="颜色（选填）" prop="color">
+            <el-input v-model.trim="form.color" maxlength="64"></el-input>
+          </el-form-item>
+        </div>
+        <div class="form-row">
+          <el-form-item label="中文品名" prop="name_cn">
+            <el-input v-model.trim="form.name_cn" maxlength="128" :disabled="formLock"></el-input>
+          </el-form-item>
+          <el-form-item label="英文品名" prop="name_en">
+            <el-input v-model.trim="form.name_en" maxlength="128" :disabled="formLock"></el-input>
+          </el-form-item>
+        </div>
+
+        <el-form-item label="商品图片">
+          <el-upload v-if="!form.image"
+                     class="img-uploader"
+                     :action="API_BASE + '/upload/image'"
+                     name="file"
+                     :headers="{ token: token }"
+                     :show-file-list="false"
+                     accept="image/jpeg,image/png,image/webp"
+                     :before-upload="beforeUpload"
+                     :on-success="onUploadSuccess"
+                     :on-error="onUploadError">
+            <i v-if="!uploading" class="el-icon-plus img-up-icon"></i>
+            <i v-else class="el-icon-loading img-up-icon"></i>
+          </el-upload>
+          <div v-else class="img-editor">
+            <div class="img-item main">
+              <img :src="form.image" alt="">
+              <button type="button" class="rm" @click="form.image = ''" title="移除图片">×</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#6E6A61;margin-top:8px">
+            点击上传，支持 jpg / png / webp，不超过 5MB，1:1 图片展示效果最佳
+          </div>
+        </el-form-item>
+
+        <div class="form-row">
+          <el-form-item label="重量 kg" prop="weight">
+            <el-input-number v-model="form.weight" :min="0.001" :precision="3" :controls="false" :disabled="formLock" style="width:100%"></el-input-number>
+          </el-form-item>
+          <el-form-item label="申报价值 $" prop="declare_value">
+            <el-input-number v-model="form.declare_value" :min="0" :precision="2" :controls="false" :disabled="formLock" style="width:100%"></el-input-number>
+          </el-form-item>
+        </div>
+        <div class="form-row form-row-3">
+          <el-form-item label="长 cm" prop="length">
+            <el-input-number v-model="form.length" :min="0.01" :precision="2" :controls="false" :disabled="formLock" style="width:100%"></el-input-number>
+          </el-form-item>
+          <el-form-item label="宽 cm" prop="width">
+            <el-input-number v-model="form.width" :min="0.01" :precision="2" :controls="false" :disabled="formLock" style="width:100%"></el-input-number>
+          </el-form-item>
+          <el-form-item label="高 cm" prop="height">
+            <el-input-number v-model="form.height" :min="0.01" :precision="2" :controls="false" :disabled="formLock" style="width:100%"></el-input-number>
+          </el-form-item>
+        </div>
+        <el-form-item label="海关编码" prop="hs_code">
+          <el-input v-model.trim="form.hs_code" placeholder="选填" maxlength="32" :disabled="formLock"></el-input>
+        </el-form-item>
+
+        <el-form-item label="中文描述">
+          <el-input v-model.trim="form.desc_cn" type="textarea" :rows="2" maxlength="2000"
+                    placeholder="选填"></el-input>
+        </el-form-item>
+        <el-form-item label="英文描述">
+          <el-input v-model.trim="form.desc_en" type="textarea" :rows="2" maxlength="2000"
+                    placeholder="选填"></el-input>
+        </el-form-item>
+
+        <el-form-item label="规格属性">
+          <div class="attr-switches">
+            <label class="asw" v-for="a in attrDefs" :key="a.key">
+              <el-switch v-model="form.attrs[a.key]" active-color="#2E4B3F" :disabled="formLock"></el-switch>
+              {{ a.label }}
+            </label>
+          </div>
+          <div style="font-size:12px;color:#6E6A61">带电、液体等属性影响运输渠道选择与报关，按实际情况勾选</div>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <button class="btn-primary" type="button" :disabled="saving" @click="submit">保 存</button>
+      </div>
+    </el-dialog>
+
+    <!-- 打印设置弹窗 -->
+    <el-dialog title="打印 SKU 标签" :visible.sync="printDialogVisible" width="420px" top="12vh">
+      <el-form label-width="90px">
+        <el-form-item label="标签尺寸">
+          <el-radio-group v-model="printSize">
+            <el-radio label="1">60 × 40 mm（热敏标准）</el-radio>
+            <el-radio label="2">100 × 50 mm</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="打印份数">
+          <el-input-number v-model="printNums" :min="1" :max="100" :precision="0"
+                           style="width:140px" @keyup.enter.native="confirmPrint"></el-input-number>
+          <span style="font-size:12px;color:#6E6A61;margin-left:10px">1 - 100 张</span>
+        </el-form-item>
+        <el-form-item label="产地标识">
+          <el-switch v-model="printMadeIn" active-color="#2E4B3F"></el-switch>
+          <span style="font-size:12px;color:#6E6A61;margin-left:10px">开启后在标签底部印「Made in China」</span>
+        </el-form-item>
+        <el-form-item label="已选 SKU">
+          <span style="font-size:13px;color:var(--ink);font-weight:600">{{ printIds.length }} 个</span>
+          <span v-if="printIds.length > 3" style="font-size:12px;color:#6E6A61;margin-left:8px">{{ printNames.slice(0,3).join('、') }} 等</span>
+          <span v-else style="font-size:12px;color:#6E6A61;margin-left:8px">{{ printNames.join('、') }}</span>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="printDialogVisible = false">取 消</el-button>
+        <button class="btn-primary" type="button" :disabled="printing" @click="confirmPrint">生成 PDF</button>
+      </div>
+    </el-dialog>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+const API_BASE = 'http://127.0.0.1:8088/customer';
+const token = localStorage.getItem('hw_token') || '';
+if (!token) { location.href = 'login.html'; }
+
+const ATTR_DEFS = [
+  { key: 'battery',  label: '带电' },
+  { key: 'liquid',   label: '液体' },
+  { key: 'powder',   label: '粉末' },
+  { key: 'magnetic', label: '磁性' },
+  { key: 'fragile',  label: '易碎' }
+];
+
+function emptyAttrs() {
+  const o = {};
+  ATTR_DEFS.forEach(function (d) { o[d.key] = false; });
+  return o;
+}
+
+function emptySku() {
+  return {
+    id: 0, sku_code: '', name_cn: '', name_en: '', color: '',
+    desc_cn: '', desc_en: '',
+    weight: null, length: null, width: null, height: null,
+    declare_value: null, hs_code: '',
+    image: '', attrs: emptyAttrs()
+  };
+}
+
+new Vue({
+  el: '#app',
+  data: {
+    user: {},
+    attrDefs: ATTR_DEFS,
+    rows: [], total: 0, page: 1, limit: 12,
+    keyword: '', statusFilter: '',
+    dateRange: [],
+    dateShortcuts: [
+      { text: '今天', onClick: function (picker) {
+          var d = new Date();
+          picker.$emit('pick', [d, d]);
+        } },
+      { text: '近 7 天', onClick: function (picker) {
+          var e = new Date(), s = new Date();
+          s.setDate(s.getDate() - 6);
+          picker.$emit('pick', [s, e]);
+        } },
+      { text: '近 30 天', onClick: function (picker) {
+          var e = new Date(), s = new Date();
+          s.setDate(s.getDate() - 29);
+          picker.$emit('pick', [s, e]);
+        } },
+      { text: '本月', onClick: function (picker) {
+          var e = new Date(), s = new Date(e.getFullYear(), e.getMonth(), 1);
+          picker.$emit('pick', [s, e]);
+        } }
+    ],
+    stats: { all: 0, on: 0, off: 0 },
+    loading: false, saving: false, uploading: false, printing: false,
+    selected: [],
+    dialogVisible: false,
+    form: emptySku(),
+    printDialogVisible: false, printIds: [], printNames: [],
+    printSize: '1', printNums: 1, printMadeIn: true,
+    rules: {
+      sku_code: [
+        { required: true, message: '请填写 SKU 编码', trigger: 'blur' },
+        { pattern: /^[A-Za-z0-9_\-.]+$/, message: '仅限字母、数字、- _ .', trigger: 'blur' }
+      ],
+      name_cn: [{ required: true, message: '请填写中文品名', trigger: 'blur' }],
+      name_en: [{ required: true, message: '请填写英文品名', trigger: 'blur' }],
+      weight: [{ required: true, message: '请填写重量', trigger: 'blur' }],
+      length: [{ required: true, message: '请填写长度', trigger: 'blur' }],
+      width:  [{ required: true, message: '请填写宽度', trigger: 'blur' }],
+      height: [{ required: true, message: '请填写高度', trigger: 'blur' }],
+      declare_value: [{ required: true, message: '请填写申报价值', trigger: 'blur' }]
+    }
+  },
+  created: function () {
+    try { this.user = JSON.parse(localStorage.getItem('hw_user') || '{}'); }
+    catch (e) { this.user = {}; }
+    this.load();
+  },
+  computed: {
+    /** 编辑模式锁定创建字段：仅颜色/图片/描述可改 */
+    formLock: function () {
+      return !!this.form.id;
+    }
+  },
+  methods: {
+    load: function () {
+      var vm = this;
+      vm.loading = true;
+      vm.loadStats();
+      var qs = new URLSearchParams({
+        page: vm.page, limit: vm.limit,
+        keyword: vm.keyword, status: vm.statusFilter,
+        start_time: (vm.dateRange && vm.dateRange[0]) || '',
+        end_time: (vm.dateRange && vm.dateRange[1]) || ''
+      });
+      fetch(API_BASE + '/product/list?' + qs, { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.rows = j.data.map(function (r) {
+              r.image = r.image || '';
+              r.attrs = r.attrs || {};
+              return r;
+            });
+            vm.total = j.count;
+          } else if (j.code === 401) {
+            location.href = 'login.html';
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.loading = false; });
+    },
+    search: function () { this.page = 1; this.load(); },
+    resetFilter: function () {
+      this.keyword = '';
+      this.statusFilter = '';
+      this.dateRange = [];
+      this.page = 1;
+      this.load();
+    },
+    filterStatus: function (v) {
+      this.statusFilter = v;
+      this.page = 1;
+      this.load();
+    },
+    loadStats: function () {
+      var vm = this;
+      fetch(API_BASE + '/product/stats', { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0 && j.data) { vm.stats = j.data; }
+        })
+        .catch(function () {});
+    },
+    mainImg: function (row) { return row.image || ''; },
+    onSelectionChange: function (sel) { this.selected = sel; },
+    clearSelection: function () { this.$refs.skuTable.clearSelection(); },
+    batchStatus: function (state) {
+      var vm = this, label = state === 1 ? '启用' : '停用';
+      var ids = this.selected.map(function (r) { return r.id; });
+      this.$confirm('确定批量' + label + '选中的 ' + ids.length + ' 个 SKU 吗？', '提示', { type: 'warning' })
+        .then(function () {
+          var ok = 0, fail = 0;
+          var chain = Promise.resolve();
+          ids.forEach(function (id) {
+            chain = chain.then(function () {
+              return fetch(API_BASE + '/product/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', token: token },
+                body: JSON.stringify({ id: id, status: state })
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (j) { j.code === 0 ? ok++ : fail++; });
+            });
+          });
+          return chain.then(function () {
+            vm.$message.success('批量' + label + '完成：成功 ' + ok + (fail ? '，失败 ' + fail : '') );
+            vm.clearSelection();
+            vm.load();
+          });
+        })
+        .catch(function () {});
+    },
+    batchDelete: function () {
+      var vm = this;
+      var ids = this.selected.map(function (r) { return r.id; });
+      this.$confirm('确定删除选中的 ' + ids.length + ' 个 SKU 吗？删除后不可恢复。', '警告', { type: 'warning' })
+        .then(function () {
+          var ok = 0, fail = 0;
+          var chain = Promise.resolve();
+          ids.forEach(function (id) {
+            chain = chain.then(function () {
+              return fetch(API_BASE + '/product/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', token: token },
+                body: JSON.stringify({ id: id })
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (j) { j.code === 0 ? ok++ : fail++; });
+            });
+          });
+          return chain.then(function () {
+            vm.$message.success('批量删除完成：成功 ' + ok + (fail ? '，失败 ' + fail : ''));
+            vm.clearSelection();
+            vm.load();
+          });
+        })
+        .catch(function () {});
+    },
+    attrLabels: function (row) {
+      var defs = ATTR_DEFS;
+      return defs.filter(function (d) { return row.attrs && row.attrs[d.key]; })
+                 .map(function (d) { return d.label; });
+    },
+    /** create_time：后端可能返回 'Y-m-d H:i:s' 字符串或时间戳，两种都兼容 */
+    _fmt: function (v, part) {
+      if (!v) { return part === 'date' ? '—' : ''; }
+      var s = String(v);
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+      if (m) {
+        return part === 'date'
+          ? m[1] + '-' + m[2] + '-' + m[3]
+          : (m[4] ? m[4] + ':' + m[5] : '');
+      }
+      var n = Number(s);
+      var d = new Date(n * 1000);
+      if (isNaN(n) || isNaN(d.getTime())) { return part === 'date' ? '—' : ''; }
+      var p = function (x) { return x < 10 ? '0' + x : '' + x; };
+      return part === 'date'
+        ? d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+        : p(d.getHours()) + ':' + p(d.getMinutes());
+    },
+    fmtDate: function (v) { return this._fmt(v, 'date'); },
+    fmtClock: function (v) { return this._fmt(v, 'time'); },
+    openDialog: function (row) {
+      var base = emptySku();
+      if (row) {
+        var copy = JSON.parse(JSON.stringify(row));
+        Object.keys(base).forEach(function (k) {
+          if (copy[k] !== undefined && copy[k] !== null) { base[k] = copy[k]; }
+        });
+        base.attrs = Object.assign(emptyAttrs(), base.attrs || {});
+      }
+      this.form = base;
+      this.dialogVisible = true;
+      this.$nextTick(function () {
+        if (this.$refs.form) { this.$refs.form.clearValidate(); }
+      }.bind(this));
+    },
+    beforeUpload: function (file) {
+      var okType = ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) !== -1;
+      if (!okType) { this.$message.error('仅支持 jpg / png / webp 格式'); return false; }
+      if (file.size > 5 * 1024 * 1024) { this.$message.error('图片不能超过 5MB'); return false; }
+      this.uploading = true;
+      return true;
+    },
+    onUploadSuccess: function (res) {
+      this.uploading = false;
+      if (res.code === 0 && res.data && res.data.url) {
+        this.form.image = res.data.url;
+      } else {
+        this.$message.error(res.msg || '上传失败');
+      }
+    },
+    onUploadError: function () {
+      this.uploading = false;
+      this.$message.error('上传失败，请重试');
+    },
+    submit: function () {
+      var vm = this;
+      this.$refs.form.validate(function (valid) {
+        if (!valid) { return; }
+        if (!vm.form.image) {
+          vm.$message.error('请上传商品图片');
+          return;
+        }
+        vm.saving = true;
+        var url = vm.form.id ? '/product/update' : '/product/create';
+        var body = JSON.parse(JSON.stringify(vm.form));
+        if (!body.id) { delete body.id; }
+        fetch(API_BASE + url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', token: token },
+          body: JSON.stringify(body)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) {
+              vm.$message.success(j.msg + (j.data.barcode ? '，条码 ' + j.data.barcode : ''));
+              vm.dialogVisible = false;
+              vm.load();
+            } else {
+              vm.$message.error(j.msg || '保存失败');
+            }
+          })
+          .catch(function () { vm.$message.error('网络错误'); })
+          .finally(function () { vm.saving = false; });
+      });
+    },
+    toggleStatus: function (row) {
+      var vm = this;
+      fetch(API_BASE + '/product/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token: token },
+        body: JSON.stringify({ id: row.id, status: row.status === 1 ? 0 : 1 })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else { vm.$message.error(j.msg || '操作失败'); }
+        });
+    },
+    remove: function (row) {
+      var vm = this;
+      this.$confirm('确定删除 SKU「' + row.sku_code + '」吗？', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API_BASE + '/product/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: token },
+            body: JSON.stringify({ id: row.id })
+          });
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else if (j) { vm.$message.error(j.msg || '删除失败'); }
+        })
+        .catch(function () {});
+    },
+    printLabels: function (rows) {
+      var vm = this;
+      var list = (rows || []).filter(function (r) { return r && r.id; });
+      if (list.length === 0) {
+        vm.$message.warning('请先勾选要打印的 SKU');
+        return;
+      }
+      vm.printIds = list.map(function (r) { return r.id; });
+      vm.printNames = list.map(function (r) { return r.sku_code; });
+      vm.printDialogVisible = true;
+    },
+    confirmPrint: function () {
+      var vm = this;
+      if (vm.printing) { return; }
+      vm.printing = true;
+      var nums = Math.min(100, Math.max(1, parseInt(vm.printNums, 10) || 1));
+      fetch(API_BASE + '/product/print-labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token: token },
+        body: JSON.stringify({ ids: vm.printIds, nums: nums, print_type: vm.printSize, made_in_china: vm.printMadeIn ? 1 : 0 })
+      }).then(function (r) { return r.blob(); }).then(function (blob) {
+        if (blob.type.indexOf('json') > -1) {
+          return blob.text().then(function (t) {
+            var j = {};
+            try { j = JSON.parse(t); } catch (e) {}
+            vm.$message.error(j.msg || '生成标签失败');
+          });
+        }
+        var url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        vm.printDialogVisible = false;
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      }).catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.printing = false; });
+    },
+    logout: function () {
+      this.$confirm('确定退出登录吗？', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API_BASE + '/auth/logout', { method: 'POST', headers: { token: token } });
+        })
+        .catch(function () {})
+        .finally(function () {
+          localStorage.removeItem('hw_token');
+          localStorage.removeItem('hw_user');
+          location.href = 'login.html';
+        });
+    }
+  }
+});
+</script>
+</body>
+</html>

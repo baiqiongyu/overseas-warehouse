@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 - 海外仓系统</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/auth.css">
+</head>
+<body class="auth-page is-register">
+<div class="grain" aria-hidden="true"></div>
+
+<main class="auth-shell">
+  <!-- 左：品牌叙事区（与登录页一致，数据行替换为开通流程） -->
+  <section class="stage">
+    <header class="stage-top reveal" style="--d:0ms">
+      <span class="logo-mark" aria-hidden="true">仓</span>
+      <span class="logo-name">海外仓系统</span>
+      <span class="logo-en">GLOBAL WAREHOUSE SYSTEM</span>
+    </header>
+
+    <div class="stage-hero">
+      <p class="eyebrow reveal" style="--d:80ms">OPEN YOUR ACCOUNT</p>
+      <h1 class="reveal" style="--d:160ms">三步开通，<br><em>即刻入库</em>。</h1>
+      <p class="lead reveal" style="--d:260ms">填写企业信息，获取专属货主编码，即可提交入库预约与出库订单。</p>
+
+      <ul class="features features--ticks reveal" style="--d:340ms">
+        <li>
+          <span class="no" aria-hidden="true"></span>
+          <b class="ft">中转 / 代发 / 退货入库</b>
+          <span class="fd">整批到仓、拆包质检、扫码上架</span>
+        </li>
+        <li>
+          <span class="no" aria-hidden="true"></span>
+          <b class="ft">拣货复核发货</b>
+          <span class="fd">波次拣货、复核打包、交接发货</span>
+        </li>
+        <li>
+          <span class="no" aria-hidden="true"></span>
+          <b class="ft">四态库存与批次</b>
+          <span class="fd">可用 / 冻结 / 在途分账，FIFO 先进先出</span>
+        </li>
+        <li>
+          <span class="no" aria-hidden="true"></span>
+          <b class="ft">自动计费对账</b>
+          <span class="fd">仓储操作费自动核算，月度账单导出</span>
+        </li>
+      </ul>
+
+      <ul class="stats reveal" style="--d:420ms">
+        <li><b class="num">01</b><span class="lbl">填写企业信息</span></li>
+        <li><b class="num">02</b><span class="lbl">获取货主编码</span></li>
+        <li><b class="num">03</b><span class="lbl">提交入库预约</span></li>
+      </ul>
+    </div>
+
+    <footer class="stage-foot reveal" style="--d:500ms">
+      <span>© 2026 海外仓系统</span>
+      <span>货主门户 · 跨境仓储一体化管理</span>
+    </footer>
+  </section>
+
+  <!-- 右：注册表单区（Vue 挂载点） -->
+  <section class="pane" id="app">
+    <div class="pane-inner">
+      <header class="pane-top reveal" style="--d:60ms">
+        <span class="logo-mark" aria-hidden="true">仓</span>
+        <span class="logo-name">海外仓系统</span>
+        <span class="logo-en">CUSTOMER PORTAL</span>
+      </header>
+
+      <h2 class="reveal" style="--d:120ms">创建货主账号</h2>
+      <p class="pane-sub reveal" style="--d:200ms">注册后即可登录，查看库存并下单</p>
+
+      <div class="form-frame reveal" style="--d:280ms">
+        <el-form ref="form" class="auth-form"
+                 :model="form" :rules="rules" label-position="top"
+                 @submit.native.prevent="submit">
+          <el-form-item label="公司名称" prop="company_name">
+            <el-input v-model.trim="form.company_name" placeholder="与营业执照一致的公司名称" maxlength="128"></el-input>
+          </el-form-item>
+          <el-form-item label="联系人" prop="contact">
+            <el-input v-model.trim="form.contact" placeholder="主要联系人姓名" maxlength="64"></el-input>
+          </el-form-item>
+          <el-form-item label="联系电话" prop="phone">
+            <el-input v-model.trim="form.phone" placeholder="用于入库异常、到货通知的联系" maxlength="32"></el-input>
+          </el-form-item>
+          <el-form-item label="登录邮箱" prop="email">
+            <el-input v-model.trim="form.email" placeholder="name@company.com，注册后用于登录"
+                      maxlength="128" @blur="checkEmail"></el-input>
+          </el-form-item>
+          <el-form-item label="密码" prop="password">
+            <el-input v-model="form.password" type="password" placeholder="8-32 位，须包含字母和数字"
+                      show-password @input="checkStrength"></el-input>
+            <div class="strength" v-show="form.password">
+              密码强度：<b :style="{color: strengthColor}">{{ strengthText }}</b>
+            </div>
+          </el-form-item>
+          <el-form-item label="确认密码" prop="repassword">
+            <el-input v-model="form.repassword" type="password" placeholder="再次输入密码"
+                      show-password @keyup.enter.native="submit"></el-input>
+          </el-form-item>
+          <el-button class="btn-submit" type="primary" :loading="loading" native-type="submit">注 册</el-button>
+        </el-form>
+      </div>
+
+      <div class="trust-line reveal" style="--d:340ms">密码加密存储 · 货主数据严格隔离</div>
+
+      <div class="pane-foot reveal" style="--d:400ms">
+        已有账号？<a href="login.html">直接登录</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+const API_BASE = 'http://127.0.0.1:8088/customer';
+
+new Vue({
+  el: '#app',
+  data: function () {
+    var vm = this;
+    return {
+      form: {
+        company_name: '', contact: '', email: '', phone: '',
+        password: '', repassword: ''
+      },
+      loading: false,
+      strengthScore: 0,
+      rules: {
+        company_name: [{ required: true, message: '请填写公司名称', trigger: 'blur' }],
+        contact: [{ required: true, message: '请填写联系人', trigger: 'blur' }],
+        phone: [
+          { required: true, message: '请填写联系电话', trigger: 'blur' },
+          { pattern: /^\+?[0-9][0-9\s\-]{5,19}$/, message: '电话格式不正确', trigger: 'blur' }
+        ],
+        email: [
+          { required: true, message: '请填写邮箱', trigger: 'blur' },
+          { type: 'email', message: '邮箱格式不正确', trigger: 'blur' },
+          { validator: function (rule, value, cb) {
+              if (!value || !/^\S+@\S+\.\S+$/.test(value)) { return cb(); }
+              fetch(API_BASE + '/auth/check-email?email=' + encodeURIComponent(value))
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                  if (j.code === 0 && !j.data.available) {
+                    cb(new Error('该邮箱已注册，请直接登录'));
+                  } else { cb(); }
+                })
+                .catch(function () { cb(); });
+            }, trigger: 'blur' }
+        ],
+        password: [
+          { required: true, message: '请填写密码', trigger: 'blur' },
+          { min: 8, max: 32, message: '密码长度需在 8-32 位之间', trigger: 'blur' },
+          { pattern: /^(?=.*[A-Za-z])(?=.*\d).+$/, message: '密码需同时包含字母和数字', trigger: 'blur' }
+        ],
+        repassword: [
+          { required: true, message: '请再次输入密码', trigger: 'blur' },
+          { validator: function (rule, value, cb) {
+              if (value !== vm.form.password) { cb(new Error('两次输入的密码不一致')); }
+              else { cb(); }
+            }, trigger: 'blur' }
+        ]
+      }
+    };
+  },
+  computed: {
+    strengthText: function () {
+      if (this.strengthScore <= 1) return '弱';
+      if (this.strengthScore === 2) return '中';
+      return '强';
+    },
+    strengthColor: function () {
+      if (this.strengthScore <= 1) return '#B4533A';
+      if (this.strengthScore === 2) return '#8A6A3A';
+      return '#3B6D11';
+    }
+  },
+  methods: {
+    checkStrength: function () {
+      var p = this.form.password, score = 0;
+      if (p.length >= 8) score++;
+      if (/[A-Za-z]/.test(p) && /\d/.test(p)) score++;
+      if (p.length >= 12 || /[^A-Za-z0-9]/.test(p)) score++;
+      this.strengthScore = p ? score : 0;
+    },
+    checkEmail: function () {
+      var vm = this;
+      var email = this.form.email;
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) { return; }
+      fetch(API_BASE + '/auth/check-email?email=' + encodeURIComponent(email))
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0 && !j.data.available) {
+            vm.$refs.form.validateField('email', function () {});
+          }
+        });
+    },
+    submit: function () {
+      var vm = this;
+      this.$refs.form.validate(function (valid) {
+        if (!valid) { return; }
+        vm.loading = true;
+        fetch(API_BASE + '/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(vm.form)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) {
+              vm.$alert('货主编码：' + j.data.customer_code + '，请牢记登录邮箱', '注册成功', {
+                confirmButtonText: '前往登录',
+                callback: function () {
+                  location.href = 'login.html?email=' + encodeURIComponent(vm.form.email);
+                }
+              });
+            } else {
+              vm.$message.error(j.msg || '注册失败');
+            }
+          })
+          .catch(function () { vm.$message.error('网络错误，请稍后重试'); })
+          .finally(function () { vm.loading = false; });
+      });
+    }
+  }
+});
+</script>
+</body>
+</html>

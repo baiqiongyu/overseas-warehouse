@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 - 海外仓系统</title>
+<!-- 字体：衬线展示字 + 黑体正文（jsdelivr fontsource 分包，按需加载） -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/auth.css">
+</head>
+<body class="auth-page">
+<div class="grain" aria-hidden="true"></div>
+
+<main class="auth-shell">
+  <!-- 左：品牌叙事区（<960px 隐藏） -->
+  <section class="stage">
+    <header class="stage-top reveal" style="--d:0ms">
+      <span class="logo-mark" aria-hidden="true">仓</span>
+      <span class="logo-name">海外仓系统</span>
+      <span class="logo-en">GLOBAL WAREHOUSE SYSTEM</span>
+    </header>
+
+    <div class="stage-hero">
+      <p class="eyebrow reveal" style="--d:80ms">GLOBAL WAREHOUSE SYSTEM</p>
+      <h1 class="reveal" style="--d:160ms">把全球仓，<br>收进<em>一块屏幕</em>。</h1>
+      <p class="lead reveal" style="--d:260ms">入库、出库、库存与批次——跨境生意里的每一件货，在这里都有迹可循。</p>
+
+      <ul class="features reveal" style="--d:340ms">
+        <li>
+          <span class="no">01</span>
+          <b class="ft">全链路入库</b>
+          <span class="fd">中转、代发、退货三条业务线，预约收货、扫码质检、推荐上架一步到位</span>
+        </li>
+        <li>
+          <span class="no">02</span>
+          <b class="ft">订单式出库</b>
+          <span class="fd">审核冻结库存、波次拣货、复核打包、交接发货，全程节点可追溯</span>
+        </li>
+        <li>
+          <span class="no">03</span>
+          <b class="ft">四态库存分账</b>
+          <span class="fd">可用 / 冻结 / 在途独立核算，FIFO 批次先进先出，盘点盈亏有据可查</span>
+        </li>
+        <li>
+          <span class="no">04</span>
+          <b class="ft">计费与对账</b>
+          <span class="fd">仓储费、操作费自动计费，月度账单与库存日快照一键导出</span>
+        </li>
+      </ul>
+
+      <ul class="stats reveal" style="--d:420ms">
+        <li><b class="num">12<small>+</small></b><span class="lbl">覆盖国家</span></li>
+        <li><b class="num">300<small>+</small></b><span class="lbl">合作货主</span></li>
+        <li><b class="num">99.98<small>%</small></b><span class="lbl">库存准确率</span></li>
+      </ul>
+    </div>
+
+    <footer class="stage-foot reveal" style="--d:500ms">
+      <span>© 2026 海外仓系统</span>
+      <span>货主门户 · 跨境仓储一体化管理</span>
+    </footer>
+  </section>
+
+  <!-- 右：登录表单区（Vue 挂载点，品牌区为纯静态） -->
+  <section class="pane" id="app">
+    <div class="pane-inner">
+      <header class="pane-top reveal" style="--d:60ms">
+        <span class="logo-mark" aria-hidden="true">仓</span>
+        <span class="logo-name">海外仓系统</span>
+        <span class="logo-en">CUSTOMER PORTAL</span>
+      </header>
+
+      <h2 class="reveal" style="--d:120ms">欢迎回来</h2>
+      <p class="pane-sub reveal" style="--d:200ms">登录货主门户，查看您的全球库存</p>
+
+      <div class="form-frame reveal" style="--d:280ms">
+        <el-form ref="form" class="auth-form"
+                 :model="form" :rules="rules"
+                 @submit.native.prevent="submit">
+          <el-form-item prop="email" label="邮箱">
+            <el-input v-model.trim="form.email" placeholder="name@company.com"
+                      autocomplete="username" clearable></el-input>
+          </el-form-item>
+          <el-form-item prop="password" label="密码">
+            <el-input v-model="form.password" type="password" placeholder="输入登录密码"
+                      autocomplete="current-password" show-password
+                      @keyup.enter.native="submit"></el-input>
+          </el-form-item>
+          <el-button class="btn-submit" type="primary" :loading="loading" native-type="submit">登 录</el-button>
+        </el-form>
+      </div>
+
+      <div class="trust-line reveal" style="--d:340ms">密码加密存储 · 货主数据严格隔离</div>
+
+      <div class="pane-foot reveal" style="--d:400ms">
+        还没有账号？<a href="register.html">申请开通</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+const API_BASE = 'http://127.0.0.1:8088/customer';
+
+new Vue({
+  el: '#app',
+  data: {
+    form: { email: '', password: '' },
+    loading: false,
+    rules: {
+      email: [
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
+        { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+      ],
+      password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+    }
+  },
+  created: function () {
+    // 注册成功跳转过来时预填邮箱
+    var email = new URLSearchParams(location.search).get('email');
+    if (email) { this.form.email = email; }
+  },
+  methods: {
+    submit: function () {
+      var vm = this;
+      this.$refs.form.validate(function (valid) {
+        if (!valid) { return; }
+        vm.loading = true;
+        fetch(API_BASE + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(vm.form)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) {
+              localStorage.setItem('hw_token', j.data.token);
+              localStorage.setItem('hw_user', JSON.stringify(j.data.user));
+              vm.$message.success('登录成功');
+              setTimeout(function () { location.href = 'home.html'; }, 600);
+            } else {
+              vm.$message.error(j.msg || '登录失败');
+            }
+          })
+          .catch(function () { vm.$message.error('网络错误，请稍后重试'); })
+          .finally(function () { vm.loading = false; });
+      });
+    }
+  }
+});
+</script>
+</body>
+</html>

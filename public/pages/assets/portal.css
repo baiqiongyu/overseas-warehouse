@@ -1,0 +1,172 @@
+/* ============================================================
+   portal.css —— 货主门户内页共享样式（home / profile / sku）
+   与 auth.css 同一套设计令牌：松柏绿 + 暖米白 + 蜜蜡金
+   ============================================================ */
+
+:root {
+  --ink: #2E4B3F;
+  --ink-2: #3C6151;
+  --paper: #FAF8F4;
+  --paper-2: #F2EFE8;
+  --text-dark: #2A2620;
+  --text-muted: #6E6A61;
+  --text-light: #F4F1E8;
+  --text-light-muted: #ACB8A9;
+  --accent: #D9A05B;
+  --accent-ink: #A65E3F;
+  --hairline: rgba(42, 38, 32, .14);
+  --hairline-light: rgba(244, 241, 232, .14);
+  --danger: #B4533A;
+  --font-display: 'Noto Serif SC', 'Songti SC', serif;
+  --font-body: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --r-md: 8px;
+  --shadow-1: 0 2px 8px rgba(46, 75, 63, .08);
+  --shadow-2: 0 8px 28px rgba(46, 75, 63, .16);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 160ms; --dur-base: 320ms;
+}
+
+* { box-sizing: border-box; }
+body.portal {
+  margin: 0; background: var(--paper);
+  font-family: var(--font-body); color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+}
+.portal :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+/* 文本输入类控件点击聚焦不亮圈（Chrome 对 text input 恒判 focus-visible），仅边框变色提示 */
+.portal .el-input__inner:focus-visible,
+.portal .el-range-editor.el-input__inner:focus-visible,
+.portal .el-textarea__inner:focus-visible,
+.portal input[type="text"]:focus-visible,
+.portal input[type="number"]:focus-visible { outline: none; }
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  height: 60px; background: var(--ink); color: var(--text-light);
+  display: flex; align-items: center; gap: 32px;
+  padding: 0 28px; position: sticky; top: 0; z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 10px; flex: none; }
+.brand .mark {
+  width: 28px; height: 28px; border-radius: 6px; background: var(--accent);
+  color: var(--ink); font-family: var(--font-display); font-weight: 700;
+  display: grid; place-items: center; font-size: 15px;
+}
+.brand .name { font-size: 15px; letter-spacing: .04em; font-weight: 500; }
+
+.nav { display: flex; gap: 4px; flex: 1; }
+.nav a {
+  color: var(--text-light-muted); text-decoration: none;
+  font-size: 14px; padding: 6px 14px; border-radius: 6px;
+  transition: color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.nav a:hover { color: var(--text-light); background: rgba(244, 241, 232, .08); }
+.nav a.active { color: var(--ink); background: var(--accent); font-weight: 500; }
+
+.topbar .who { display: flex; align-items: center; gap: 12px; flex: none; font-size: 13px; color: var(--text-light-muted); }
+.topbar .who b { color: var(--text-light); font-weight: 500; }
+
+/* ---------- 内容区 ---------- */
+.container { max-width: 1760px; margin: 32px auto 64px; padding: 0 24px; }
+/* 表格类页面（SKU / 入库）：列表列多，放开到接近满宽 */
+.container.wide { max-width: 2200px; }
+.page-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 24px; }
+.page-head h1 {
+  font-family: var(--font-display); font-size: 26px; font-weight: 700;
+  margin: 0; letter-spacing: .01em;
+}
+.page-head .sub { font-size: 13px; color: var(--text-muted); }
+
+/* ---------- 卡片与分组 ---------- */
+.card {
+  background: #fff; border: 1px solid var(--hairline); border-radius: var(--r-md);
+  padding: 24px; margin-bottom: 24px;
+}
+.card > h3 {
+  font-family: var(--font-display); font-size: 17px; font-weight: 700;
+  margin: 0 0 18px; padding-bottom: 12px; border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 8px;
+}
+.card > h3::before { content: ""; width: 4px; height: 16px; background: var(--accent); border-radius: 2px; }
+
+/* ---------- 表单 ---------- */
+.form-row { display: flex; gap: 16px; }
+.form-row > .el-form-item { flex: 1; min-width: 0; }
+.form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+
+.btn-primary {
+  background: var(--ink-2); color: #F7F4EE; border: none; border-radius: var(--r-md);
+  height: 40px; padding: 0 28px; font-size: 14px; letter-spacing: .08em; cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: background-color var(--dur-fast) ease-out, box-shadow var(--dur-base) ease-out;
+}
+.btn-primary:hover, .btn-primary:focus-visible { background: #2F5245; box-shadow: var(--shadow-2); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ---------- Element-UI 换肤 ---------- */
+.portal .el-input__inner {
+  background: #fff; border: 1px solid var(--hairline); border-radius: var(--r-md);
+  color: var(--text-dark); font-size: 14px;
+}
+.portal .el-input__inner:focus {
+  border-color: var(--ink-2);
+  box-shadow: none;   /* 去掉聚焦金色光圈，仅保留边框颜色变化 */
+}
+.portal .el-form-item__label { color: var(--text-muted); font-size: 13px; }
+
+/* 日期区间选择器：修中段「至」被挤压隐藏、文字色偏淡的问题 */
+.portal .el-range-editor.el-input__inner {
+  display: flex; align-items: center; padding: 0 8px 0 10px;
+}
+/* 日期框内部的起始/截止输入框聚焦时不画橙圈（Element 的 .el-range-input 无 type 属性，
+   命中不了 input[type="text"] 的豁免规则，需单独排除） */
+.portal .el-range-editor input:focus-visible { outline: none; }
+.portal .el-range-editor .el-range__icon { color: var(--text-muted); line-height: 1; }
+.portal .el-range-editor .el-range-input {
+  flex: 1 1 0; width: auto; min-width: 0; font-size: 13px; color: var(--text-dark);
+}
+.portal .el-range-editor .el-range-input::placeholder { color: #A8A296; }
+.portal .el-range-editor .el-range-separator {
+  flex: none; width: auto; padding: 0 6px;
+  font-size: 12px; color: var(--text-muted);
+  height: 100%; display: flex; align-items: center;   /* 修复「至」跑到顶部 */
+}
+.portal .el-range-editor .el-range__close-icon { line-height: 1; }
+.portal .el-table th { background: var(--paper-2) !important; color: var(--text-dark); }
+.portal .el-table td, .portal .el-table th.is-leaf { border-bottom-color: var(--hairline); }
+.portal .el-table--border, .portal .el-table--group { border-color: var(--hairline); }
+.portal .el-table::before { background-color: var(--hairline); }
+.portal .el-dialog { border-radius: var(--r-md); }
+.portal .el-dialog__title { font-family: var(--font-display); font-weight: 700; }
+.portal .el-pagination { margin-top: 16px; text-align: right; }
+
+/* ---------- 完整度进度 ---------- */
+.complete-bar { display: flex; align-items: center; gap: 12px; }
+.complete-bar .track { flex: 1; height: 8px; background: var(--paper-2); border-radius: 4px; overflow: hidden; }
+.complete-bar .fill {
+  height: 100%; background: linear-gradient(90deg, var(--ink-2), var(--accent));
+  border-radius: 4px; transition: width var(--dur-base) var(--ease-out);
+}
+.complete-bar .num { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--accent-ink); }
+
+/* ---------- 工具栏 ---------- */
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.toolbar .spacer { flex: 1; }
+
+/* ---------- 快捷入口卡 ---------- */
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.quick-card {
+  display: block; background: #fff; border: 1px solid var(--hairline);
+  border-radius: var(--r-md); padding: 20px; text-decoration: none; color: var(--text-dark);
+  transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+.quick-card:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.quick-card .qc-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.quick-card .qc-title::before { content: ""; width: 8px; height: 8px; background: var(--accent); border-radius: 2px; }
+.quick-card .qc-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+@media (max-width: 720px) {
+  .form-row { flex-direction: column; gap: 0; }
+  .quick-grid { grid-template-columns: 1fr; }
+  .nav { display: none; }
+}

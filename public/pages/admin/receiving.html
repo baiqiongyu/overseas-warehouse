@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>收货作业 - 运营后台</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+[v-cloak] { display: none !important; }
+.wrap { max-width: 720px; margin: 40px auto; text-align: center; }
+.wrap .big { font-family: var(--font-display); font-size: 46px; font-weight: 700; color: var(--ink, #2E4B3F); }
+.wrap .sub { font-size: 14px; color: var(--text-muted, #6E6A61); margin: 12px 0 26px; line-height: 1.9; }
+.steps { display: flex; gap: 12px; justify-content: center; }
+.step { background: #fff; border: 1px solid rgba(42,38,32,.1); border-radius: 10px; padding: 16px 18px; width: 200px; text-align: left; }
+.step .n { font-family: var(--font-display); font-weight: 700; color: #A65E3F; font-size: 13px; }
+.step .t { font-size: 14px; color: #2A2620; font-weight: 600; margin: 4px 0 6px; }
+.step .d { font-size: 12px; color: #6E6A61; line-height: 1.7; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <div class="wrap">
+    <div class="big">收货作业</div>
+    <p class="sub">下一个开发模块：预约单核对 → 按箱唛扫码收货 → 差异登记 → 收货完成。<br>
+      入库单箱唛（box_code）与扫码反解接口已就绪，就等这里开工。</p>
+    <div class="steps">
+      <div class="step"><div class="n">STEP 1</div><div class="t">到仓确认</div><div class="d">核对预约单与实际到货车辆、柜号 / 封条号</div></div>
+      <div class="step"><div class="n">STEP 2</div><div class="t">扫码收货</div><div class="d">扫箱唛条码，逐箱确认 SKU 与数量</div></div>
+      <div class="step"><div class="n">STEP 3</div><div class="t">差异登记</div><div class="d">多收 / 少收 / 破损逐箱登记并通知客户</div></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script>
+new Vue({ el: '#app', data: {} });
+</script>
+</body>
+</html>

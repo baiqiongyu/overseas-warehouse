@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>入库单列表 - 运营后台</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.2.5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+/* ============================================================
+   入库单台账 —— 工业实用方向
+   暖纸底 + 松柏墨绿 + 单一强调色（陶土）；
+   竖细分栏 + 等宽数字，让 10 列数据像纸质入仓台账，扫读不串行。
+   ============================================================ */
+:root {
+  --ink: #2E4B3F;
+  --ink-2: #3C6151;
+  --paper: #FAF8F4;
+  --paper-2: #F2EFE8;
+  --paper-3: #FBF9F5;
+  --text: #2A2620;
+  --muted: #6E6A61;
+  --faint: #8C8679;
+  --accent: #D9A05B;
+  --accent-ink: #A65E3F;
+  --rule: rgba(42, 38, 32, .13);
+  --rule-soft: rgba(42, 38, 32, .065);
+  --mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  --disp: 'Noto Serif SC', 'Songti SC', serif;
+  --body: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+[v-cloak] { display: none !important; }
+html, body { height: 100%; }
+body.portal {
+  padding: 0; overflow: hidden;
+  background:
+    radial-gradient(70rem 40rem at 88% -30%, rgba(217, 160, 91, .10), transparent 62%),
+    radial-gradient(50rem 30rem at -10% 110%, rgba(46, 75, 63, .06), transparent 60%),
+    var(--paper);
+}
+#app { height: 100%; display: flex; flex-direction: column; padding: 14px 18px 10px; }
+
+/* ---------- ① 页头 + 状态页签 ---------- */
+.head { flex: none; display: flex; align-items: flex-end; gap: 26px;
+  padding-bottom: 0; border-bottom: 1px solid var(--rule); }
+.brandline { flex: none; display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; }
+.brandline .eyebrow {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--accent-ink); border: 1px solid rgba(166, 94, 63, .3); border-radius: 3px;
+  padding: 2px 5px; transform: translateY(-2px);
+}
+.brandline h1 {
+  font-family: var(--disp); font-size: 21px; font-weight: 700; margin: 0;
+  letter-spacing: .04em; color: var(--ink); line-height: 1;
+}
+.brandline .total { font-size: 11.5px; color: var(--muted); letter-spacing: .02em; }
+.brandline .total b { font-family: var(--mono); font-size: 13px; color: var(--ink-2); font-weight: 600; margin-right: 2px; }
+
+.rail { flex: 1; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.rail::-webkit-scrollbar { height: 0; }
+.tab {
+  appearance: none; background: none; border: none; cursor: pointer; font-family: var(--body);
+  display: flex; align-items: baseline; gap: 6px; padding: 9px 11px 11px; position: relative;
+  font-size: 12.5px; color: var(--muted); letter-spacing: .02em; white-space: nowrap;
+  transition: color 160ms ease-out, background-color 160ms ease-out;
+}
+.tab .n {
+  font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums;
+  color: var(--faint); background: rgba(42, 38, 32, .06); border-radius: 9px; padding: 1px 5px;
+  transition: color 160ms ease-out, background-color 160ms ease-out;
+}
+.tab::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px;
+  background: var(--ink); transform: scaleX(0); transform-origin: left;
+  transition: transform 220ms var(--ease);
+}
+.tab:hover { color: var(--ink-2); background: rgba(46, 75, 63, .04); }
+.tab:hover .n { color: var(--ink-2); }
+.tab.on { color: var(--ink); font-weight: 500; }
+.tab.on .n { color: var(--ink); background: rgba(46, 75, 63, .12); }
+.tab.on::after { transform: scaleX(1); }
+.tab:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: -3px; }
+
+.icon-btn {
+  flex: none; width: 30px; height: 30px; margin-bottom: 7px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--rule); background: #fff; color: var(--muted); font-size: 13px;
+  display: grid; place-items: center; transition: color 160ms, border-color 160ms, background-color 160ms;
+}
+.icon-btn:hover { color: var(--ink); border-color: rgba(46, 75, 63, .4); background: var(--paper-3); }
+.icon-btn:disabled { opacity: .5; cursor: default; }
+.spin { animation: spin 900ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- ② 筛选条 ---------- */
+.filters { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 0 9px; flex-wrap: wrap; }
+.filters .f { flex: none; }
+.filters .f-search { width: 246px; }
+.filters .f-co { width: 186px; }
+.filters .f-wh { width: 138px; }
+.filters .f-date { width: 244px; }
+.filters .spacer { flex: 1; }
+.filters .tip { font-size: 11px; color: var(--faint); letter-spacing: .02em; }
+.filters .tip b { color: var(--accent-ink); font-weight: 500; }
+
+.btn-ghost {
+  height: 32px; padding: 0 13px; border-radius: 6px; cursor: pointer; font-family: var(--body);
+  font-size: 12.5px; letter-spacing: .04em; background: #fff; color: var(--ink-2);
+  border: 1px solid var(--rule); transition: border-color 160ms, background-color 160ms, color 160ms;
+}
+.btn-ghost:hover { border-color: var(--ink-2); background: #fff; }
+.btn-ghost.solid { background: var(--ink-2); border-color: var(--ink-2); color: #F7F4EE; }
+.btn-ghost.solid:hover { background: #2F5245; }
+.btn-ghost:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+/* 控件瘦身：与台账密度一致 */
+.portal .el-input__inner { height: 32px; line-height: 32px; font-size: 12.5px; border-radius: 6px; }
+.portal .el-input__icon { line-height: 32px; font-size: 12px; }
+.portal .el-input--small .el-input__inner { height: 28px; line-height: 28px; }
+.portal .el-range-editor.el-input__inner { height: 32px; }
+.portal .el-range-editor .el-range-input { font-size: 12px; }
+.portal .el-select .el-input__inner { font-size: 12.5px; }
+
+/* ---------- ③ 批量操作坞 ---------- */
+.dock {
+  flex: none; display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+  padding: 7px 12px; border-radius: 7px; color: #EDE9DE;
+  background: linear-gradient(96deg, var(--ink) 0%, #345446 100%);
+  box-shadow: 0 6px 18px rgba(46, 75, 63, .22);
+}
+.dock .lbl { font-size: 12px; letter-spacing: .04em; color: #C9D2C6; }
+.dock .cnt { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--accent); margin: 0 1px; }
+.dock .skip { font-size: 11px; color: #A9B6AC; letter-spacing: .02em; }
+.dock .flex1 { flex: 1; }
+.dock .el-button { height: 26px; padding: 0 12px; font-size: 12px; border-radius: 5px;
+  background: rgba(244, 241, 232, .1); border-color: rgba(244, 241, 232, .22); color: #F4F1E8; }
+.dock .el-button:hover { background: rgba(244, 241, 232, .18); border-color: rgba(244, 241, 232, .3); color: #fff; }
+.dock .el-button.go { background: var(--accent); border-color: var(--accent); color: #2E2A21; font-weight: 500; }
+.dock .el-button.go:hover { background: #E3AE6B; border-color: #E3AE6B; color: #201D18; }
+
+/* ---------- ④ 台账表格 ---------- */
+.ledger-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #fff; border: 1px solid var(--rule); border-radius: 9px; overflow: hidden;
+  box-shadow: 0 1px 0 rgba(46, 75, 63, .03), 0 12px 30px -22px rgba(46, 75, 63, .5); }
+.ledger-body { flex: 1; min-height: 0; }
+
+/* 注意：.ledger 类就挂在 el-table 根元素上，这里必须用同元素选择器，不能用后代 */
+.ledger { color: var(--text); }
+.ledger th { height: 34px; padding: 0 !important; background: var(--paper-2) !important;
+  border-bottom: 1px solid var(--rule) !important; }
+.ledger th .cell {
+  font-family: var(--body); font-size: 10.5px; font-weight: 500; color: #7C776C;
+  letter-spacing: .13em; text-transform: uppercase; white-space: nowrap; padding: 0 10px;
+}
+.ledger td { padding: 0 !important; border-bottom: 1px solid var(--rule-soft) !important; vertical-align: middle; }
+.ledger td .cell { padding: 5px 10px; line-height: 1.45; }
+/* 竖细分栏：台账的骨架 */
+.ledger th:not(:last-child) .cell,
+.ledger td:not(:last-child) .cell { border-right: 1px solid var(--rule-soft); }
+.ledger .el-table__body tr { height: 56px; }
+.ledger .el-table__row:hover > td { background: #FBF8F2 !important; }
+.ledger .el-table__row:hover > td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+.ledger .el-table__fixed-right::before, .ledger .el-table__fixed::before { background-color: var(--rule-soft); }
+.ledger .el-table__fixed-right { box-shadow: -8px 0 14px -12px rgba(42, 38, 32, .3); }
+.ledger .el-checkbox__inner { width: 14px; height: 14px; border-radius: 3px; border-color: rgba(42, 38, 32, .3); }
+.ledger .el-checkbox__inner::after { left: 4px; top: 1px; }
+.ledger .el-checkbox__input.is-checked .el-checkbox__inner,
+.ledger .el-checkbox__input.is-indeterminate .el-checkbox__inner { background: var(--ink-2); border-color: var(--ink-2); }
+
+/* 单元格内容 */
+.ono { display: flex; flex-direction: column; gap: 1px; }
+.ono .no { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--ink);
+  letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ono .ref { font-size: 10.5px; color: var(--accent-ink); letter-spacing: .01em;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ono .ref i { font-style: normal; color: #A9A294; margin-right: 4px; letter-spacing: .04em; }
+
+.co { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.co .av {
+  flex: none; width: 22px; height: 22px; border-radius: 5px; display: grid; place-items: center;
+  background: rgba(46, 75, 63, .08); color: var(--ink-2); font-family: var(--disp);
+  font-size: 11px; font-weight: 700; letter-spacing: 0;
+}
+.co .txt { min-width: 0; flex: 1; }
+.co .nm { font-size: 12.5px; color: var(--text); font-weight: 500;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.co .cd { font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: .02em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wh { font-size: 12.5px; color: var(--text); white-space: nowrap;
+  display: block; overflow: hidden; text-overflow: ellipsis; }
+.biz { display: inline-block; font-size: 10px; letter-spacing: .08em; padding: 1px 6px; border-radius: 3px;
+  white-space: nowrap;
+  border: 1px solid rgba(166, 94, 63, .32); color: var(--accent-ink); background: rgba(217, 160, 91, .07); }
+.biz.zhong { border-color: rgba(46, 75, 63, .3); color: var(--ink-2); background: rgba(46, 75, 63, .05); }
+
+.ht { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ht .glyph { flex: none; width: 13px; height: 13px; border: 1px solid rgba(46, 75, 63, .5);
+  border-radius: 2px; position: relative; overflow: hidden; }
+.ht .glyph.g1 { background: repeating-linear-gradient(90deg, transparent 0 2px, rgba(46, 75, 63, .35) 2px 3px); }
+.ht .glyph.g2 { background: repeating-linear-gradient(180deg, transparent 0 2px, rgba(46, 75, 63, .35) 2px 3px); }
+.ht .glyph.g3 { background: repeating-linear-gradient(45deg, transparent 0 3px, rgba(46, 75, 63, .22) 3px 4px); }
+.ht .lb { font-size: 12.5px; color: var(--text); }
+.ht .qty { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent-ink);
+  font-variant-numeric: tabular-nums; margin-left: 1px; }
+.ht-sub { font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: .02em;
+  margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.metrics { display: flex; align-items: baseline; white-space: nowrap; }
+.metrics .m { display: flex; align-items: baseline; gap: 2px; padding: 0 6px; }
+.metrics .m:first-child { padding-left: 0; }
+.metrics .m + .m { border-left: 1px solid var(--rule-soft); }
+.metrics .m b { font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.metrics .m span { font-size: 9px; color: var(--faint); letter-spacing: .04em; }
+.metrics .m.q b { color: var(--accent-ink); }
+
+.dual { display: flex; flex-direction: column; gap: 1px; align-items: center; }
+.dual .d { font-family: var(--mono); font-size: 11.5px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dual .h { font-family: var(--mono); font-size: 10px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.na { color: #C2BCAE; font-family: var(--mono); font-size: 11.5px; }
+/* 备注：单行截断，悬停看全文（多行会撑高行高、打乱台账节奏） */
+.rmk { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+
+/* 状态胶囊 */
+.st { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; letter-spacing: .02em;
+  padding: 2px 7px 2px 6px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+.st::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .6); }
+.st.s10 { color: #6E6A61; background: rgba(140, 134, 119, .1); border-color: rgba(140, 134, 119, .22); }
+.st.s20 { color: #2A6394; background: rgba(47, 110, 165, .08); border-color: rgba(47, 110, 165, .22); }
+.st.s30 { color: #2A7B46; background: rgba(47, 138, 76, .08); border-color: rgba(47, 138, 76, .22); }
+.st.s40 { color: #A7681A; background: rgba(192, 122, 29, .1); border-color: rgba(192, 122, 29, .24); }
+.st.s50 { color: #6A449B; background: rgba(122, 79, 176, .08); border-color: rgba(122, 79, 176, .2); }
+.st.s60 { color: #2E4B3F; background: rgba(46, 75, 63, .1); border-color: rgba(46, 75, 63, .24); }
+.st.s90 { color: #9C4732; background: rgba(180, 83, 58, .08); border-color: rgba(180, 83, 58, .22); }
+
+/* 操作列 */
+.ops { display: flex; align-items: center; justify-content: center; gap: 2px; flex-wrap: nowrap; }
+.ops button { appearance: none; background: none; border: 1px solid transparent; border-radius: 5px;
+  cursor: pointer; font-family: var(--body); font-size: 12px; color: var(--muted); padding: 3px 6px;
+  white-space: nowrap; flex: none;
+  transition: color 160ms, background-color 160ms, border-color 160ms; }
+.ops button:hover { color: var(--ink); background: rgba(46, 75, 63, .06); }
+.ops button.go { color: #F7F4EE; background: var(--ink-2); border-color: var(--ink-2); padding: 3px 8px; letter-spacing: .04em; }
+.ops button.go:hover { background: #2F5245; }
+.ops button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+
+/* 空态 */
+.empty { padding: 42px 0 46px; display: grid; place-items: center; gap: 6px; }
+.empty .mark { width: 46px; height: 34px; border: 1.5px solid rgba(46, 75, 63, .22); border-radius: 4px;
+  position: relative; margin-bottom: 6px; }
+.empty .mark::before { content: ""; position: absolute; inset: 6px; border: 1px dashed rgba(46, 75, 63, .18); border-radius: 2px; }
+.empty .mark::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 30px; height: 5px;
+  transform: translateX(-50%); border-radius: 2px; background: rgba(166, 94, 63, .35); }
+.empty .t { font-family: var(--disp); font-size: 14px; color: var(--ink); letter-spacing: .04em; }
+.empty .s { font-size: 11.5px; color: var(--faint); }
+
+/* 分页 */
+.pager { flex: none; display: flex; align-items: center; justify-content: flex-end;
+  padding: 8px 12px; border-top: 1px solid var(--rule-soft); background: var(--paper-3); }
+.pager .el-pagination { padding: 0; font-weight: 400; }
+.pager .el-pagination .btn-prev, .pager .el-pagination .btn-next,
+.pager .el-pagination .el-pager li { background: none; font-family: var(--mono); font-size: 12px; min-width: 26px; }
+.pager .el-pagination .el-pager li.active { color: var(--ink); font-weight: 600; }
+.pager .el-pagination .el-pager li.active::after { content: ""; display: block; height: 2px;
+  background: var(--accent); margin: -3px 4px 0; }
+.pager .el-pagination__total, .pager .el-pagination__sizes .el-input__inner { font-size: 11.5px; color: var(--muted); }
+
+/* ---------- ⑤ 详情：装货单式排版 ---------- */
+.portal .el-dialog { border-radius: 10px; box-shadow: 0 34px 80px -30px rgba(30, 30, 24, .45); }
+.portal .el-dialog__header { padding: 16px 22px 13px; border-bottom: 1px solid var(--rule); }
+.portal .el-dialog__title { font-family: var(--disp); font-size: 15px; letter-spacing: .06em; color: var(--ink); }
+.portal .el-dialog__body { padding: 0 22px 8px; }
+.portal .el-dialog__footer { padding: 12px 22px 16px; border-top: 1px solid var(--rule-soft); }
+.dlg-scroll { height: calc(76vh - 130px); overflow-y: auto; padding: 16px 4px 4px 0; }
+.dlg-scroll::-webkit-scrollbar { width: 6px; }
+.dlg-scroll::-webkit-scrollbar-thumb { background: rgba(42, 38, 32, .16); border-radius: 3px; }
+
+.sheet-head { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; }
+.sheet-head .no { font-family: var(--mono); font-size: 17px; font-weight: 500; color: var(--ink);
+  letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.sheet-head .ref { font-family: var(--mono); font-size: 11px; color: var(--accent-ink);
+  border: 1px dashed rgba(166, 94, 63, .4); border-radius: 4px; padding: 2px 7px; }
+.sheet-head .ref i { font-style: normal; color: #A9A294; font-family: var(--body); margin-right: 5px; letter-spacing: .04em; }
+.sheet-head .spacer { flex: 1; }
+
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+.info-grid .ig { padding: 9px 12px 10px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: #fff; }
+.info-grid .ig.wide { grid-column: 1 / -1; }
+.info-grid .k { font-size: 9.5px; color: var(--faint); letter-spacing: .14em; text-transform: uppercase; }
+.info-grid .v { font-size: 12.5px; color: var(--text); margin-top: 3px; font-weight: 500; word-break: break-all; }
+.info-grid .v b { color: var(--ink); font-weight: 600; }
+.info-grid .v.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.info-grid .v .cd { font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-left: 4px; }
+
+.sec-title { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 10px; }
+.sec-title .t { font-family: var(--disp); font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: .06em; }
+.sec-title .s { font-family: var(--mono); font-size: 10.5px; color: var(--faint); letter-spacing: .02em; }
+.sec-title::after { content: ""; flex: 1; height: 1px; background: var(--rule-soft); transform: translateY(-3px); }
+
+.sheet-table.el-table { border-top: 1px solid var(--rule); font-size: 12px; }
+.sheet-table.el-table::before { display: none; }
+.sheet-table .el-table__header th { background: var(--paper-2) !important; height: 30px; padding: 0 !important; }
+.sheet-table .el-table__header th .cell { font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: #7C776C; font-weight: 500; padding: 0 10px; }
+.sheet-table td { padding: 0 !important; border-bottom: 1px solid var(--rule-soft) !important; }
+.sheet-table td .cell { padding: 7px 10px; }
+.sheet-table .num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; }
+.sheet-table .num.hot { color: var(--accent-ink); font-weight: 600; }
+
+.box { border: 1px solid var(--rule); border-radius: 7px; margin-bottom: 8px; overflow: hidden; background: #fff;
+  transition: border-color 200ms ease-out, box-shadow 200ms ease-out; }
+.box:hover { border-color: rgba(46, 75, 63, .28); box-shadow: 0 8px 20px -16px rgba(46, 75, 63, .55); }
+.box-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px;
+  background: linear-gradient(180deg, #FBFAF6, #F7F4ED); border-bottom: 1px solid var(--rule-soft); }
+.box-head .bc { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); letter-spacing: -.01em; }
+.box-head .tag { font-size: 10px; letter-spacing: .06em; color: var(--ink-2); background: rgba(46, 75, 63, .07);
+  border: 1px solid rgba(46, 75, 63, .16); border-radius: 3px; padding: 1px 5px; }
+.box-head .m { font-family: var(--mono); font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.box-head .m b { color: var(--accent-ink); font-weight: 600; }
+.box-items { padding: 2px 12px 6px; }
+.bi { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-bottom: 1px dashed var(--rule-soft); }
+.bi:last-child { border-bottom: none; }
+.bi img { width: 26px; height: 26px; border-radius: 4px; object-fit: cover; background: var(--paper-2); }
+.bi .ph { width: 26px; height: 26px; border-radius: 4px; background: var(--paper-2); display: grid; place-items: center;
+  color: rgba(46, 75, 63, .28); font-family: var(--disp); font-size: 11px; font-weight: 700; }
+.bi .code { font-family: var(--mono); font-size: 11.5px; color: var(--ink); width: 104px; flex: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bi .name { font-size: 11.5px; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bi .qty { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+
+.dlg-more { text-align: center; padding: 12px 0 4px; }
+.dlg-more button { background: #fff; border: 1px dashed rgba(42, 38, 32, .22); border-radius: 6px; cursor: pointer;
+  font-family: var(--body); font-size: 12px; color: var(--ink-2); padding: 6px 20px; letter-spacing: .03em;
+  transition: border-color 160ms, background-color 160ms; }
+.dlg-more button:hover { border-color: var(--ink-2); background: var(--paper-3); }
+.dlg-more .hint { font-family: var(--mono); font-size: 10.5px; color: var(--faint); letter-spacing: .04em; }
+.att-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2);
+  background: #fff; border: 1px solid var(--rule); border-radius: 5px; padding: 5px 10px; margin: 0 6px 6px 0;
+  text-decoration: none; transition: border-color 160ms, color 160ms; }
+.att-item:hover { border-color: var(--ink-2); color: var(--ink); }
+
+/* ---------- ⑥ 动效：一次编排的入场 ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ledger .el-table__body tr { animation: row-in 420ms var(--ease) both; }
+  .ledger .el-table__body tr:nth-child(1) { animation-delay: 0ms; }
+  .ledger .el-table__body tr:nth-child(2) { animation-delay: 35ms; }
+  .ledger .el-table__body tr:nth-child(3) { animation-delay: 70ms; }
+  .ledger .el-table__body tr:nth-child(4) { animation-delay: 105ms; }
+  .ledger .el-table__body tr:nth-child(5) { animation-delay: 140ms; }
+  .ledger .el-table__body tr:nth-child(6) { animation-delay: 175ms; }
+  .ledger .el-table__body tr:nth-child(7) { animation-delay: 210ms; }
+  .ledger .el-table__body tr:nth-child(n+8) { animation-delay: 245ms; }
+  .sheet-head { animation: rise 380ms var(--ease) both; }
+  .info-grid { animation: rise 420ms var(--ease) 40ms both; }
+  .dlg-scroll .sec-title { animation: rise 420ms var(--ease) 80ms both; }
+}
+@keyframes row-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+
+  <!-- ① 页头：标题 + 状态页签（带计数）+ 刷新 -->
+  <header class="head">
+    <div class="brandline">
+      <span class="eyebrow">Inbound</span>
+      <h1>入库单</h1>
+      <span class="total"><b>{{ stats.all }}</b>张</span>
+    </div>
+    <nav class="rail" aria-label="按状态筛选">
+      <button v-for="t in tabs" :key="t.v" type="button" class="tab" :class="{ on: stateFilter === t.v }"
+              :aria-pressed="stateFilter === t.v" @click="pickState(t.v)">
+        <span class="t">{{ t.label }}</span><span class="n">{{ t.n }}</span>
+      </button>
+    </nav>
+    <button class="icon-btn" type="button" title="刷新列表" :disabled="loading" @click="load">
+      <i class="el-icon-refresh" :class="{ spin: loading }"></i>
+    </button>
+  </header>
+
+  <!-- ② 筛选条 -->
+  <div class="filters">
+    <el-input class="f f-search" v-model.trim="keyword" placeholder="单号 / 客户单号 / 柜号 / 公司"
+              prefix-icon="el-icon-search" clearable
+              @keyup.enter.native="search" @clear="search"></el-input>
+    <el-select class="f f-co" v-model="customerId" placeholder="全部货主" clearable filterable @change="search">
+      <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.code + ' · ' + c.name"></el-option>
+    </el-select>
+    <el-select class="f f-wh" v-model="warehouseId" placeholder="全部仓库" clearable filterable @change="search">
+      <el-option v-for="w in warehouses" :key="w.id" :value="w.id" :label="w.name"></el-option>
+    </el-select>
+    <el-date-picker class="f f-date" v-model="dateRange" type="daterange" unlink-panels value-format="yyyy-MM-dd"
+                    range-separator="→" start-placeholder="创建起始" end-placeholder="创建截止"
+                    clearable @change="search"></el-date-picker>
+    <button class="btn-ghost solid" type="button" @click="search">查询</button>
+    <button class="btn-ghost" type="button" @click="resetFilter">重置</button>
+    <div class="spacer"></div>
+    <span class="tip" v-if="filtered">筛选结果 <b>{{ total }}</b> 张</span>
+  </div>
+
+  <!-- ③ 批量操作坞 -->
+  <div class="dock" v-if="selected.length > 0">
+    <span class="lbl">已选</span><span class="cnt">{{ selected.length }}</span><span class="lbl">张</span>
+    <el-button class="go" size="mini" v-if="can('inbound:approve')"
+               :loading="batchLoading" @click="batchApprove">批量审核通过</el-button>
+    <span class="skip" v-if="pendingCount !== selected.length">其中 {{ pendingCount }} 张待审核，其余自动跳过</span>
+    <div class="flex1"></div>
+    <el-button size="mini" @click="clearSelection">取消选择</el-button>
+  </div>
+
+  <!-- ④ 台账表格 -->
+  <div class="ledger-wrap">
+    <div class="ledger-body">
+      <el-table ref="inbTable" class="ledger inb-table" :data="rows" v-loading="loading" height="100%"
+                @selection-change="onSelectionChange" empty-text=" ">
+        <el-table-column type="selection" width="40" align="center"></el-table-column>
+
+        <el-table-column label="入库单号" min-width="128">
+          <template slot-scope="s">
+            <div class="ono">
+              <span class="no">{{ s.row.order_no }}</span>
+              <span class="ref" v-if="s.row.ref_no" :title="s.row.ref_no"><i>客户</i>{{ s.row.ref_no }}</span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="货主公司" min-width="136">
+          <template slot-scope="s">
+            <div class="co">
+              <span class="av">{{ initial(s.row.company_name) }}</span>
+              <div class="txt">
+                <div class="nm" :title="s.row.company_name">{{ s.row.company_name }}</div>
+                <div class="cd">{{ s.row.company_code }}</div>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="业务" min-width="68" align="center">
+          <template slot-scope="s">
+            <span class="biz" :class="{ zhong: s.row.biz_type === 1 }">{{ s.row.biz_type === 1 ? '中转' : '代发' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="目标仓库" min-width="86">
+          <template slot-scope="s"><span class="wh" :title="s.row.warehouse_name">{{ s.row.warehouse_name }}</span></template>
+        </el-table-column>
+
+        <el-table-column label="到仓形态" min-width="118">
+          <template slot-scope="s">
+            <div class="ht">
+              <span class="glyph" :class="'g' + (s.row.handling_type || 3)"></span>
+              <span class="lb">{{ handlingText(s.row) }}</span>
+              <span class="qty" v-if="s.row.handling_type === 2">{{ s.row.pallet_qty || 0 }} 托</span>
+            </div>
+            <div class="ht-sub" v-if="s.row.handling_type === 1 && s.row.container_no" :title="s.row.container_no">{{ s.row.container_no }}</div>
+            <div class="ht-sub" v-else-if="s.row.expect_time">预计 {{ s.row.expect_time.slice(5) }}</div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="箱 / SKU / 件" min-width="142">
+          <template slot-scope="s">
+            <div class="metrics">
+              <span class="m"><b>{{ s.row.box_count }}</b><span>箱</span></span>
+              <span class="m"><b>{{ s.row.sku_kinds }}</b><span>SKU</span></span>
+              <span class="m q"><b>{{ s.row.total_qty }}</b><span>件</span></span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="状态" min-width="88" align="center">
+          <template slot-scope="s">
+            <span class="st" :class="'s' + s.row.state">{{ stateText(s.row.state) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="创建时间" min-width="88" align="center">
+          <template slot-scope="s">
+            <div class="dual" v-if="splitTime(s.row.create_time)">
+              <span class="d">{{ splitTime(s.row.create_time)[0] }}</span>
+              <span class="h">{{ splitTime(s.row.create_time)[1] }}</span>
+            </div>
+            <span class="na" v-else>—</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="备注" min-width="130">
+          <template slot-scope="s">
+            <span class="rmk" v-if="s.row.remark" :title="s.row.remark">{{ s.row.remark }}</span>
+            <span class="na" v-else>—</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" width="104" fixed="right" align="center">
+          <template slot-scope="s">
+            <div class="ops">
+              <button type="button" @click="openDetail(s.row)">详情</button>
+              <button type="button" class="go" v-if="s.row.state === 20 && can('inbound:approve')"
+                      @click="approve(s.row)">审核</button>
+            </div>
+          </template>
+        </el-table-column>
+
+        <div slot="empty" class="empty">
+          <div class="mark"></div>
+          <div class="t">没有符合条件的入库单</div>
+          <div class="s">换个状态页签，或清空筛选条件看看全部单据</div>
+          <button class="btn-ghost" type="button" style="margin-top:8px" @click="resetFilter">清空筛选</button>
+        </div>
+      </el-table>
+    </div>
+    <div class="pager">
+      <el-pagination background layout="total, prev, pager, next, sizes" :total="total"
+                     :current-page.sync="page" :page-size.sync="limit" :page-sizes="[20, 50, 100]"
+                     @current-change="load" @size-change="search"></el-pagination>
+    </div>
+  </div>
+
+  <!-- ⑤ 详情弹窗（只读） -->
+  <el-dialog title="入库单详情" :visible.sync="dlg" width="940px" top="5vh" custom-class="sheet-dlg">
+    <div class="dlg-scroll" v-if="detail" @scroll="onScroll">
+
+      <div class="sheet-head">
+        <span class="no">{{ detail.order_no }}</span>
+        <span class="ref" v-if="detail.ref_no"><i>客户单号</i>{{ detail.ref_no }}</span>
+        <span class="spacer"></span>
+        <span class="st" :class="'s' + detail.state">{{ stateText(detail.state) }}</span>
+      </div>
+
+      <div class="info-grid">
+        <div class="ig"><div class="k">货主公司</div>
+          <div class="v"><b>{{ detail.customer ? detail.customer.name : '—' }}</b>
+            <span class="cd" v-if="detail.customer">{{ detail.customer.code }}</span></div></div>
+        <div class="ig"><div class="k">目标仓库</div><div class="v">{{ detail.warehouse_name }}</div></div>
+        <div class="ig"><div class="k">业务线</div><div class="v">{{ detail.biz_type === 1 ? '中转入库' : '代发入库' }}</div></div>
+        <div class="ig"><div class="k">到仓形态</div><div class="v">{{ handlingFull(detail) }}</div></div>
+        <div class="ig"><div class="k">预计到仓</div><div class="v mono">{{ detail.expect_time || '—' }}</div></div>
+        <div class="ig"><div class="k">创建时间</div><div class="v mono">{{ fmtTime(detail.create_time) }}</div></div>
+        <div class="ig"><div class="k">审核时间</div><div class="v mono">{{ detail.audit_time_text || '—' }}</div></div>
+        <div class="ig"><div class="k">箱数 / 件数</div>
+          <div class="v mono">{{ detail.box_total }} 箱 · {{ totalQty(detail.items) }} 件</div></div>
+        <div class="ig"><div class="k">客户联系</div>
+          <div class="v">{{ detail.customer && detail.customer.contact ? detail.customer.contact : '—' }}
+            <span class="cd" v-if="detail.customer && detail.customer.phone">{{ detail.customer.phone }}</span></div></div>
+        <div class="ig wide"><div class="k">备注</div>
+          <div class="v" :style="detail.remark ? '' : 'color:#C2BCAE'">{{ detail.remark || '—' }}</div></div>
+      </div>
+
+      <div class="sec-title">
+        <span class="t">SKU 汇总</span>
+        <span class="s">{{ detail.items.length }} 种 · 共 {{ totalQty(detail.items) }} 件</span>
+      </div>
+      <el-table class="sheet-table" :data="detail.items" size="small">
+        <el-table-column label="图片" width="48" align="center">
+          <template slot-scope="s">
+            <img v-if="s.row.image" :src="s.row.image" style="width:28px;height:28px;border-radius:4px;object-fit:cover">
+            <div v-else class="ph" style="width:28px;height:28px;border-radius:4px;background:#F2EFE8;display:grid;place-items:center;color:rgba(46,75,63,.3);font-family:'Noto Serif SC',serif;font-size:11px;font-weight:700">仓</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="SKU" min-width="132">
+          <template slot-scope="s">
+            <div style="font-family:var(--mono);font-size:11.5px;color:#2E4B3F">{{ s.row.sku_code }}</div>
+            <div style="font-family:var(--mono);font-size:9.5px;color:#8C8679">{{ s.row.barcode }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="品名" min-width="180">
+          <template slot-scope="s">
+            <div style="font-size:12px">{{ s.row.name_cn }}</div>
+            <div style="font-size:10.5px;color:#8C8679">{{ s.row.name_en }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="应收" width="74" align="right">
+          <template slot-scope="s"><span class="num hot">{{ s.row.expect_qty }}</span></template>
+        </el-table-column>
+        <el-table-column label="实收" width="74" align="right">
+          <template slot-scope="s"><span class="num">{{ s.row.received_qty }}</span></template>
+        </el-table-column>
+        <el-table-column label="已上架" width="74" align="right">
+          <template slot-scope="s"><span class="num">{{ s.row.shelved_qty }}</span></template>
+        </el-table-column>
+      </el-table>
+
+      <div class="sec-title">
+        <span class="t">箱明细</span>
+        <span class="s">已加载 {{ detail.boxes.length }} / {{ detail.box_total }} 箱</span>
+      </div>
+      <div class="box" v-for="b in detail.boxes" :key="b.id">
+        <div class="box-head">
+          <span class="bc">{{ b.box_code }}</span>
+          <span class="tag" v-if="b.box_type_name">{{ b.box_type_code || b.box_type_name }}</span>
+          <span class="m">{{ b.length }}×{{ b.width }}×{{ b.height }} <span style="color:#A9A294">cm</span></span>
+          <span class="m"><b>{{ b.weight }}</b> kg</span>
+          <span class="m" v-if="b.pallet_no">托 {{ b.pallet_no }}</span>
+          <span class="m" style="margin-left:auto">内 {{ b.items.length }} 种 SKU</span>
+        </div>
+        <div class="box-items">
+          <div class="bi" v-for="it in b.items" :key="it.id">
+            <img v-if="it.image" :src="it.image" alt="">
+            <div v-else class="ph">仓</div>
+            <span class="code">{{ it.sku_code }}</span>
+            <span class="name">{{ it.name_cn }} {{ it.name_en ? '· ' + it.name_en : '' }}</span>
+            <span class="qty">× {{ it.qty }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="dlg-more" v-if="detail.box_has_more">
+        <button type="button" :disabled="boxLoading" @click="loadMoreBoxes">
+          {{ boxLoading ? '加载中…' : '加载更多箱（还有 ' + (detail.box_total - detail.boxes.length) + ' 箱）' }}
+        </button>
+      </div>
+      <div class="dlg-more" v-else-if="detail.box_total > 0"><span class="hint">已加载全部 {{ detail.box_total }} 箱</span></div>
+
+      <template v-if="detail.attachments.length">
+        <div class="sec-title"><span class="t">附件</span><span class="s">{{ detail.attachments.length }} 个</span></div>
+        <a class="att-item" v-for="a in detail.attachments" :key="a.id" :href="a.file_url" target="_blank">
+          <i class="el-icon-paperclip"></i>{{ a.file_name || '附件' }}
+        </a>
+      </template>
+    </div>
+    <div slot="footer">
+      <el-button @click="dlg = false">关 闭</el-button>
+      <button class="btn-primary" type="button" v-if="detail && detail.state === 20 && can('inbound:approve')"
+              @click="approve(detail)">✓ 审核通过</button>
+    </div>
+  </el-dialog>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+var API = 'http://127.0.0.1:8088/admin';
+var TOKEN = localStorage.getItem('hw_admin_token') || '';
+if (!TOKEN) { parent.location.href = 'login.html'; }
+
+var STATE_TEXT = { 10: '草稿', 20: '待审核', 30: '待入库', 40: '入库中', 50: '已入库', 60: '已上架', 90: '已取消' };
+var HT_TEXT = { 1: '集装箱', 2: '托盘', 3: '散箱' };
+var CT_TEXT = { 1: '20 尺', 2: '40 尺' };
+
+new Vue({
+  el: '#app',
+  data: {
+    API: API, TOKEN: TOKEN,
+    perms: JSON.parse(localStorage.getItem('hw_admin_perms') || '["*"]'),
+    rows: [], total: 0, page: 1, limit: 20, loading: false,
+    customers: [], warehouses: [],
+    customerId: null, warehouseId: null, stateFilter: '', keyword: '', dateRange: [],
+    stats: { all: 0, draft: 0, pending: 0, approved: 0, receiving: 0, received: 0, shelved: 0, canceled: 0 },
+    dlg: false, detail: null, boxLoading: false,
+    selected: [], batchLoading: false
+  },
+  computed: {
+    /** 状态页签（带实时计数，取代原单选组） */
+    tabs: function () {
+      var s = this.stats;
+      return [
+        { v: '', label: '全部', n: s.all },
+        { v: '10', label: '草稿', n: s.draft },
+        { v: '20', label: '待审核', n: s.pending },
+        { v: '30', label: '待入库', n: s.approved },
+        { v: '40', label: '入库中', n: s.receiving },
+        { v: '50', label: '已入库', n: s.received },
+        { v: '60', label: '已上架', n: s.shelved },
+        { v: '90', label: '已取消', n: s.canceled }
+      ];
+    },
+    pendingCount: function () {
+      return this.selected.filter(function (r) { return r.state === 20; }).length;
+    },
+    filtered: function () {
+      return !!(this.keyword || this.customerId || this.warehouseId || this.stateFilter
+        || (this.dateRange && this.dateRange.length));
+    }
+  },
+  created: function () {
+    this.loadCustomers();
+    this.loadWarehouses();
+    this.load();
+  },
+  methods: {
+    can: function (k) {
+      return this.perms.indexOf('*') >= 0 || this.perms.indexOf(k) >= 0;
+    },
+    stateText: function (s) { return STATE_TEXT[s] || String(s); },
+    /** 公司首字：给货主一个可辨识的方块标识，扫读时不必读完公司全名 */
+    initial: function (name) {
+      var s = String(name || '').trim();
+      return s ? s.charAt(0).toUpperCase() : '·';
+    },
+    /** 创建时间拆成「日期 / 时刻」两行，10 列并排时省宽度也更好扫 */
+    splitTime: function (v) {
+      if (!v) { return null; }
+      var s = String(v);
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+      if (m) { return [m[2] + '-' + m[3], m[4] + ':' + m[5]]; }
+      m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) { return [m[2] + '-' + m[3], '']; }
+      var n = Number(s);
+      if (!isNaN(n) && n > 0) {
+        var d = new Date(n * 1000);
+        var p = function (x) { return x < 10 ? '0' + x : '' + x; };
+        return [p(d.getMonth() + 1) + '-' + p(d.getDate()), p(d.getHours()) + ':' + p(d.getMinutes())];
+      }
+      return null;
+    },
+    handlingText: function (row) {
+      return HT_TEXT[row.handling_type] || '散箱';
+    },
+    handlingFull: function (d) {
+      var t = HT_TEXT[d.handling_type] || '散箱';
+      if (d.handling_type === 1) {
+        t += ' · ' + (CT_TEXT[d.container_type] || '') + (d.container_no ? ' · ' + d.container_no : '');
+        if (d.seal_no) { t += ' · 封号 ' + d.seal_no; }
+      } else if (d.handling_type === 2) {
+        t += ' · ' + d.pallet_qty + ' 托';
+      }
+      return t;
+    },
+    totalQty: function (items) {
+      return (items || []).reduce(function (n, it) { return n + (it.expect_qty || 0); }, 0);
+    },
+    pickState: function (v) {
+      if (this.stateFilter === v) { return; }
+      this.stateFilter = v;
+      this.search();
+    },
+    loadCustomers: function () {
+      var vm = this;
+      fetch(API + '/product/customers', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0) { vm.customers = j.data; } })
+        .catch(function () {});
+    },
+    loadWarehouses: function () {
+      var vm = this;
+      fetch(API + '/warehouse/list?limit=100&status=1', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0) { vm.warehouses = j.data; } })
+        .catch(function () {});
+    },
+    load: function () {
+      var vm = this;
+      vm.loading = true;
+      vm.selected = [];
+      vm.loadStats();
+      var qs = new URLSearchParams({
+        page: vm.page, limit: vm.limit,
+        keyword: vm.keyword, state: vm.stateFilter || '',
+        customer_id: vm.customerId || '', warehouse_id: vm.warehouseId || '',
+        date_start: (vm.dateRange && vm.dateRange[0]) || '',
+        date_end: (vm.dateRange && vm.dateRange[1]) || ''
+      });
+      fetch(API + '/inbound/list?' + qs, { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.rows = j.data;
+            vm.total = j.count;
+          } else if (j.code === 401) {
+            parent.location.href = 'login.html';
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.loading = false; });
+    },
+    loadStats: function () {
+      var vm = this;
+      fetch(API + '/inbound/stats', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0 && j.data) { vm.stats = j.data; } })
+        .catch(function () {});
+    },
+    search: function () { this.page = 1; this.load(); },
+    onSelectionChange: function (rows) { this.selected = rows; },
+    clearSelection: function () {
+      this.selected = [];
+      if (this.$refs.inbTable) { this.$refs.inbTable.clearSelection(); }
+    },
+    /** 批量审核：逐张调用审核接口，非待审核自动跳过，不中断 */
+    batchApprove: function () {
+      var vm = this;
+      var targets = vm.selected.filter(function (r) { return r.state === 20; });
+      if (!targets.length) {
+        vm.$message.warning('选中的入库单都不是待审核状态，无法审核');
+        return;
+      }
+      var skip = vm.selected.length - targets.length;
+      vm.$confirm(
+        '确认审核通过选中的 ' + targets.length + ' 张入库单吗？'
+        + (skip ? '另有 ' + skip + ' 张非待审核状态将自动跳过。' : ''),
+        '批量审核', { type: 'warning' }
+      ).then(function () {
+        vm.batchLoading = true;
+        var ok = 0, fail = 0;
+        var seq = targets.reduce(function (p, row) {
+          return p.then(function () {
+            return fetch(API + '/inbound/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', token: TOKEN },
+              body: JSON.stringify({ id: row.id })
+            }).then(function (r) { return r.json(); }).then(function (j) {
+              if (j.code === 0) { ok++; } else { fail++; }
+            }).catch(function () { fail++; });
+          });
+        }, Promise.resolve());
+        seq.then(function () {
+          vm.batchLoading = false;
+          vm.$message.success('批量审核完成：成功 ' + ok + (fail ? '，失败 ' + fail : ''));
+          vm.clearSelection();
+          vm.load();
+        });
+      }).catch(function () {});
+    },
+    resetFilter: function () {
+      this.keyword = ''; this.customerId = null; this.warehouseId = null;
+      this.stateFilter = ''; this.dateRange = []; this.page = 1; this.load();
+    },
+    _fmt: function (v) {
+      if (!v) { return '—'; }
+      var s = String(v);
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+      if (m) { return m[1] + '-' + m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5]; }
+      m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) { return m[1] + '-' + m[2] + '-' + m[3]; }
+      var n = Number(s);
+      if (isNaN(n) || n <= 0) { return '—'; }
+      var d = new Date(n * 1000);
+      var p = function (x) { return x < 10 ? '0' + x : '' + x; };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    },
+    fmtTime: function (v) { return this._fmt(v); },
+    openDetail: function (row) {
+      var vm = this;
+      vm.dlg = true;
+      vm.detail = null;
+      vm.fetchDetail(row.id);
+    },
+    fetchDetail: function (id) {
+      var vm = this;
+      fetch(API + '/inbound/detail?id=' + id + '&box_page=1&box_limit=8', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) { vm.detail = j.data; }
+          else { vm.$message.error(j.msg || '详情加载失败'); vm.dlg = false; }
+        })
+        .catch(function () { vm.$message.error('网络错误'); });
+    },
+    loadMoreBoxes: function () {
+      var vm = this, d = vm.detail;
+      if (!d || !d.box_has_more || vm.boxLoading) { return; }
+      vm.boxLoading = true;
+      var next = d.box_page + 1;
+      fetch(API + '/inbound/detail?id=' + d.id + '&box_page=' + next + '&box_limit=' + d.box_limit, { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            d.boxes = d.boxes.concat(j.data.boxes);
+            d.box_page = j.data.box_page;
+            d.box_has_more = j.data.box_has_more;
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.boxLoading = false; });
+    },
+    onScroll: function (e) {
+      var el = e.target;
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) { this.loadMoreBoxes(); }
+    },
+    approve: function (row) {
+      var vm = this;
+      vm.$confirm('审核通过入库单「' + row.order_no + '」？通过后进入待入库，等待收货作业。', '审核确认', { type: 'warning' })
+        .then(function () {
+          return fetch(API + '/inbound/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: TOKEN },
+            body: JSON.stringify({ id: row.id })
+          });
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.$message.success(j.msg);
+            vm.dlg = false;
+            vm.load();
+          } else {
+            vm.$message.error(j.msg || '审核失败');
+          }
+        })
+        .catch(function () {});
+    }
+  }
+});
+</script>
+</body>
+</html>

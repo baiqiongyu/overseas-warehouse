@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角色管理 - 运营后台</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+[v-cloak] { display: none !important; }
+body { padding: 4px; }
+.toolbar { display: flex; align-items: center; margin-bottom: 14px; }
+.toolbar .spacer { flex: 1; }
+.tbl { background: #fff; border: 1px solid rgba(42,38,32,.1); border-radius: 10px; padding: 6px 14px 14px; }
+.op button { background: none; border: none; cursor: pointer; font-size: 12.5px; color: #3C6151;
+  font-family: inherit; padding: 3px 6px; }
+.op button.warn { color: #B4533A; }
+.op button:hover { text-decoration: underline; }
+.super-tag { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px;
+  background: rgba(217,160,91,.2); color: #A65E3F; font-weight: 600; margin-left: 6px; }
+.pager { margin-top: 12px; text-align: right; }
+.tree-box { max-height: 320px; overflow: auto; border: 1px solid rgba(42,38,32,.12);
+  border-radius: 8px; padding: 10px; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <div class="toolbar">
+    <span style="font-size:13px;color:var(--text-muted,#6E6A61)">角色决定员工能看到哪些菜单、能做哪些操作</span>
+    <div class="spacer"></div>
+    <button class="btn-primary" type="button" @click="openAdd" v-if="can('role:create')">+ 新增角色</button>
+  </div>
+
+  <div class="tbl">
+    <el-table :data="rows" v-loading="loading" empty-text="还没有角色">
+      <el-table-column label="角色名称" min-width="180">
+        <template slot-scope="s">{{ s.row.name }}<span class="super-tag" v-if="s.row.is_super">超管</span></template>
+      </el-table-column>
+      <el-table-column prop="remark" label="备注" min-width="200">
+        <template slot-scope="s">{{ s.row.remark || '—' }}</template>
+      </el-table-column>
+      <el-table-column prop="admin_count" label="员工数" width="80" align="center"></el-table-column>
+      <el-table-column label="授权菜单" width="90" align="center">
+        <template slot-scope="s">{{ s.row.is_super ? '全部' : s.row.menu_count }}</template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="76" align="center">
+        <template slot-scope="s">
+          <span :style="{color: s.row.status === 1 ? '#2E4B3F' : '#B4533A', fontSize: '12.5px'}">{{ s.row.status === 1 ? '启用' : '停用' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="230">
+        <template slot-scope="s">
+          <div class="op">
+            <button type="button" v-if="can('role:update')" @click="openEdit(s.row)">编辑授权</button>
+            <button type="button" v-if="can('role:status') && !s.row.is_super" @click="toggle(s.row)">{{ s.row.status === 1 ? '停用' : '启用' }}</button>
+            <button type="button" class="warn" v-if="can('role:delete') && !s.row.is_super" @click="remove(s.row)">删除</button>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="pager">
+      <el-pagination layout="total, prev, pager, next" :total="total" :page-size="limit"
+                     :current-page.sync="page" @current-change="load"></el-pagination>
+    </div>
+  </div>
+
+  <el-dialog :title="form.id ? '编辑角色 · ' + form.name : '新增角色'" :visible.sync="dlg" width="440px">
+    <el-form label-width="82px" size="small">
+      <el-form-item label="角色名称" required>
+        <el-input v-model.trim="form.name" :disabled="form.is_super"></el-input>
+      </el-form-item>
+      <el-form-item label="备注">
+        <el-input v-model.trim="form.remark"></el-input>
+      </el-form-item>
+      <el-form-item label="菜单授权">
+        <div class="tree-box" v-if="!form.is_super">
+          <el-tree ref="tree" :data="menuTree" show-checkbox node-key="id" default-expand-all
+                   :props="{ label: 'title', children: 'children' }"
+                   :check-strictly="false"></el-tree>
+        </div>
+        <div v-else style="font-size:12.5px;color:#A65E3F">超管角色拥有全部权限，无需勾选</div>
+      </el-form-item>
+    </el-form>
+    <div slot="footer">
+      <el-button @click="dlg = false">取 消</el-button>
+      <el-button type="primary" :loading="saving" @click="save">保 存</el-button>
+    </div>
+  </el-dialog>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+var API = 'http://127.0.0.1:8088/admin';
+var TOKEN = localStorage.getItem('hw_admin_token') || '';
+function api(url, body, method) {
+  return fetch(API + url, {
+    method: method || (body ? 'POST' : 'GET'),
+    headers: { 'Content-Type': 'application/json', token: TOKEN },
+    body: body ? JSON.stringify(body) : null
+  }).then(function (r) { return r.json(); });
+}
+new Vue({
+  el: '#app',
+  data: {
+    perms: JSON.parse(localStorage.getItem('hw_admin_perms') || '["*"]'),
+    rows: [], total: 0, page: 1, limit: 20, loading: false,
+    menuTree: [], dlg: false, saving: false,
+    form: { id: 0, name: '', remark: '', is_super: 0 }
+  },
+  methods: {
+    can: function (k) { return this.perms.indexOf('*') >= 0 || this.perms.indexOf(k) >= 0; },
+    load: function () {
+      var vm = this; vm.loading = true;
+      api('/role/list?page=' + vm.page + '&limit=' + vm.limit).then(function (j) {
+        vm.loading = false;
+        if (j.code === 0) { vm.rows = j.data; vm.total = j.count; }
+        else if (j.code === 401) { location.href = 'login.html'; }
+      });
+    },
+    loadTree: function () {
+      var vm = this;
+      api('/menu/tree').then(function (j) {
+        if (j.code === 0) {
+          // 授权树只展示目录 + 页面（按钮随页面自动勾选）
+          vm.menuTree = j.data.map(function (m) {
+            return { id: m.id, title: m.title, children: (m.children || []).map(function (p) {
+              return { id: p.id, title: p.title, children: [] };
+            }) };
+          });
+        }
+      });
+    },
+    openAdd: function () {
+      this.form = { id: 0, name: '', remark: '', is_super: 0 };
+      this.dlg = true;
+      var vm = this;
+      setTimeout(function () { if (vm.$refs.tree) { vm.$refs.tree.setCheckedKeys([]); } }, 60);
+    },
+    openEdit: function (row) {
+      var vm = this;
+      vm.form = { id: row.id, name: row.name, remark: row.remark || '', is_super: row.is_super };
+      vm.dlg = true;
+      api('/role/menus?id=' + row.id).then(function (j) {
+        if (j.code === 0) {
+          setTimeout(function () {
+            if (vm.$refs.tree) { vm.$refs.tree.setCheckedKeys(j.data.menu_ids || []); }
+          }, 60);
+        }
+      });
+    },
+    save: function () {
+      var vm = this;
+      if (!vm.form.name) { vm.$message.warning('请填写角色名称'); return; }
+      var menuIds = vm.form.is_super ? [] : vm.$refs.tree.getCheckedKeys().concat(vm.$refs.tree.getHalfCheckedKeys());
+      vm.saving = true;
+      var body = { name: vm.form.name, remark: vm.form.remark, menu_ids: menuIds };
+      var p = vm.form.id ? api('/role/update', Object.assign({ id: vm.form.id }, body))
+                         : api('/role/create', body);
+      p.then(function (j) {
+        vm.saving = false;
+        if (j.code === 0) { vm.$message.success(j.msg); vm.dlg = false; vm.load(); }
+        else { vm.$message.error(j.msg || '保存失败'); }
+      }).catch(function () { vm.saving = false; });
+    },
+    toggle: function (row) {
+      var vm = this;
+      vm.$confirm('确定' + (row.status === 1 ? '停用' : '启用') + '「' + row.name + '」吗？', '提示', { type: 'warning' })
+        .then(function () { return api('/role/status', { id: row.id, status: row.status === 1 ? 0 : 1 }); })
+        .then(function (j) { if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); } })
+        .catch(function () {});
+    },
+    remove: function (row) {
+      var vm = this;
+      vm.$confirm('确定删除「' + row.name + '」吗？', '删除', { type: 'warning' })
+        .then(function () { return api('/role/delete', { id: row.id }); })
+        .then(function (j) { if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); } else if (j) { vm.$message.error(j.msg); } })
+        .catch(function () {});
+    }
+  },
+  mounted: function () {
+    var vm = this;
+    api('/auth/me').then(function (j) {
+      if (j.code !== 0) { location.href = 'login.html'; return; }
+      vm.perms = j.data.perms;
+      localStorage.setItem('hw_admin_perms', JSON.stringify(j.data.perms));
+    });
+    this.load();
+    this.loadTree();
+  }
+});
+</script>
+</body>
+</html>

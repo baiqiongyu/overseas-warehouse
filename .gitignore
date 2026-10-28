@@ -1,0 +1,17 @@
+/.idea
+/.vscode
+/vendor
+*.log
+.env
+
+# 运行时缓存与日志
+/runtime/*
+!/runtime/.gitkeep
+
+# 用户上传文件（不入库）
+/public/storage/*
+!/public/storage/.gitkeep
+
+# 系统文件
+Thumbs.db
+.DS_Store

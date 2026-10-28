@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业资料 - 海外仓系统</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/portal.css">
+<style>
+/* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用 */
+[v-cloak] { display: none !important; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand"><span class="mark">仓</span><span class="name">海外仓系统 · 货主门户</span></div>
+    <nav class="nav">
+      <a href="home.html">首页</a>
+      <a href="profile.html" class="active">企业资料</a>
+      <a href="sku.html">产品管理</a>
+      <a href="inbound.html">入库管理</a>
+    </nav>
+    <div class="who">
+      <span><b>{{ user.realname }}</b>（{{ user.customer_code }}）</span>
+      <el-button size="mini" @click="logout">退出登录</el-button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-head">
+      <h1>企业资料</h1>
+      <span class="sub">货主编码 {{ form.customer_code || '-' }}</span>
+    </div>
+
+    <el-form ref="form" :model="form" :rules="rules" label-width="100px"
+             @submit.native.prevent="save" v-loading="loading">
+      <section class="card">
+        <h3>基本信息</h3>
+        <div class="form-row">
+          <el-form-item label="公司名称" prop="name">
+            <el-input v-model.trim="form.name" maxlength="128"></el-input>
+          </el-form-item>
+          <el-form-item label="公司网址" prop="website">
+            <el-input v-model.trim="form.website" placeholder="https://" maxlength="128"></el-input>
+          </el-form-item>
+        </div>
+        <div class="form-row">
+          <el-form-item label="联系人" prop="contact">
+            <el-input v-model.trim="form.contact" maxlength="64"></el-input>
+          </el-form-item>
+          <el-form-item label="联系电话" prop="phone">
+            <el-input v-model.trim="form.phone" maxlength="32"></el-input>
+          </el-form-item>
+          <el-form-item label="国家/地区" prop="country">
+            <el-input v-model.trim="form.country" placeholder="ISO2，如 US / CN" maxlength="2"
+                      style="text-transform:uppercase"></el-input>
+          </el-form-item>
+        </div>
+        <el-form-item label="登录邮箱">
+          <el-input :value="form.email" disabled></el-input>
+        </el-form-item>
+      </section>
+
+      <section class="card">
+        <h3>税务信息</h3>
+        <el-form-item label="税号" prop="tax_no">
+          <el-input v-model.trim="form.tax_no" placeholder="EIN / VAT，清关申报用" maxlength="64"></el-input>
+        </el-form-item>
+      </section>
+
+      <section class="card">
+        <h3>收货地址</h3>
+        <div class="form-row">
+          <el-form-item label="省/州" prop="province">
+            <el-input v-model.trim="form.province" maxlength="64"></el-input>
+          </el-form-item>
+          <el-form-item label="城市" prop="city">
+            <el-input v-model.trim="form.city" maxlength="64"></el-input>
+          </el-form-item>
+          <el-form-item label="邮编" prop="postcode">
+            <el-input v-model.trim="form.postcode" maxlength="20"></el-input>
+          </el-form-item>
+        </div>
+        <el-form-item label="地址行1" prop="address">
+          <el-input v-model.trim="form.address" maxlength="255"></el-input>
+        </el-form-item>
+        <el-form-item label="地址行2" prop="address2">
+          <el-input v-model.trim="form.address2" maxlength="255"></el-input>
+        </el-form-item>
+      </section>
+
+      <div class="form-actions">
+        <button class="btn-primary" type="submit" :disabled="saving">保存资料</button>
+      </div>
+    </el-form>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+const API_BASE = 'http://127.0.0.1:8088/customer';
+const token = localStorage.getItem('hw_token') || '';
+if (!token) { location.href = 'login.html'; }
+
+new Vue({
+  el: '#app',
+  data: {
+    user: {},
+    loading: true,
+    saving: false,
+    form: {
+      customer_code: '', name: '', contact: '', phone: '', email: '',
+      country: '', tax_no: '', website: '',
+      province: '', city: '', address: '', address2: '', postcode: ''
+    },
+    rules: {
+      name:    [{ required: true, message: '请填写公司名称', trigger: 'blur' }],
+      contact: [{ required: true, message: '请填写联系人', trigger: 'blur' }],
+      phone:   [
+        { required: true, message: '请填写联系电话', trigger: 'blur' },
+        { pattern: /^\+?[0-9][0-9\s\-]{5,19}$/, message: '电话格式不正确', trigger: 'blur' }
+      ],
+      country: [{ max: 2, message: '仅填写 ISO2 国家代码', trigger: 'blur' }]
+    }
+  },
+  created: function () {
+    try { this.user = JSON.parse(localStorage.getItem('hw_user') || '{}'); }
+    catch (e) { this.user = {}; }
+    this.load();
+  },
+  methods: {
+    load: function () {
+      var vm = this;
+      fetch(API_BASE + '/profile', { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            Object.keys(vm.form).forEach(function (k) {
+              if (j.data[k] !== undefined && j.data[k] !== null) { vm.form[k] = j.data[k]; }
+            });
+          } else if (j.code === 401) {
+            location.href = 'login.html';
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.loading = false; });
+    },
+    save: function () {
+      var vm = this;
+      this.$refs.form.validate(function (valid) {
+        if (!valid) { return; }
+        vm.saving = true;
+        fetch(API_BASE + '/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', token: token },
+          body: JSON.stringify(vm.form)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) {
+              vm.$message.success('资料已保存，完整度 ' + j.data.complete_rate + '%');
+            } else {
+              vm.$message.error(j.msg || '保存失败');
+            }
+          })
+          .catch(function () { vm.$message.error('网络错误，请稍后重试'); })
+          .finally(function () { vm.saving = false; });
+      });
+    },
+    logout: function () {
+      this.$confirm('确定退出登录吗？', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API_BASE + '/auth/logout', { method: 'POST', headers: { token: token } });
+        })
+        .catch(function () {})
+        .finally(function () {
+          localStorage.removeItem('hw_token');
+          localStorage.removeItem('hw_user');
+          location.href = 'login.html';
+        });
+    }
+  }
+});
+</script>
+</body>
+</html>

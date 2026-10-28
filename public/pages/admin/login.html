@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后台登录 - 海外仓系统</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+:root { --ink: #2E4B3F; --paper: #FAF8F4; --paper-2: #F2EFE8; --text-dark: #2A2620; --text-muted: #6E6A61;
+  --accent: #D9A05B; --accent-ink: #A65E3F; --hairline: rgba(42,38,32,.14);
+  --font-display: 'Noto Serif SC', serif; --font-body: 'Noto Sans SC', 'Microsoft YaHei', sans-serif; }
+* { box-sizing: border-box; }
+[v-cloak] { display: none !important; }
+body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #22382F 0%, #2E4B3F 55%, #3C6151 100%); font-family: var(--font-body); }
+.login-card { width: 380px; background: #fff; border-radius: 12px; padding: 40px 38px 34px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35); }
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.brand .mark { width: 34px; height: 34px; border-radius: 8px; background: var(--ink); color: #F4F1E8;
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.brand .name { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
+.brand .en { margin-left: auto; font-size: 10px; letter-spacing: .18em; color: #B0AA9C; }
+h1 { font-family: var(--font-display); font-size: 22px; color: var(--text-dark); margin: 22px 0 4px; }
+.sub { font-size: 13px; color: var(--text-muted); margin: 0 0 24px; }
+.sub i { font-style: normal; color: var(--accent-ink); }
+.el-input { margin-bottom: 14px; }
+.el-button--primary { width: 100%; margin-top: 6px; background: var(--ink); border-color: var(--ink);
+  font-family: var(--font-body); letter-spacing: .3em; text-indent: .3em; }
+.el-button--primary:hover { background: #3C6151; border-color: #3C6151; }
+.hint { margin-top: 18px; font-size: 12px; color: #B0AA9C; text-align: center; }
+.back { display: block; margin-top: 14px; text-align: center; font-size: 12.5px; color: var(--text-muted);
+  text-decoration: none; }
+.back:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<div id="app" v-cloak class="login-card">
+  <div class="brand">
+    <span class="mark">仓</span><span class="name">海外仓系统</span><span class="en">ADMIN</span>
+  </div>
+  <h1>内部运营后台</h1>
+  <p class="sub">员工账号登录 · <i>非货主门户</i></p>
+  <el-input v-model.trim="email" placeholder="员工邮箱" size="medium"
+            @keyup.enter.native="doLogin"></el-input>
+  <el-input v-model="password" type="password" placeholder="密码" size="medium" show-password
+            @keyup.enter.native="doLogin"></el-input>
+  <el-button type="primary" :loading="loading" @click="doLogin">登 录</el-button>
+  <p class="hint">首次使用请联系管理员开通账号</p>
+  <a class="back" href="../login.html">返回货主门户 →</a>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+var API = 'http://127.0.0.1:8088/admin';
+new Vue({
+  el: '#app',
+  data: { email: '', password: '', loading: false },
+  methods: {
+    doLogin: function () {
+      var vm = this;
+      if (!vm.email || !vm.password) { vm.$message.warning('请输入邮箱和密码'); return; }
+      vm.loading = true;
+      fetch(API + '/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: vm.email, password: vm.password })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          vm.loading = false;
+          if (j.code === 0) {
+            localStorage.setItem('hw_admin_token', j.data.token);
+            localStorage.setItem('hw_admin_user', JSON.stringify(j.data.user || {}));
+            location.href = 'index.html';
+          } else { vm.$message.error(j.msg || '登录失败'); }
+        })
+        .catch(function () { vm.loading = false; vm.$message.error('网络错误'); });
+    }
+  },
+  mounted: function () {
+    // 已登录直接进后台
+    if (localStorage.getItem('hw_admin_token')) { location.href = 'index.html'; }
+  }
+});
+</script>
+</body>
+</html>

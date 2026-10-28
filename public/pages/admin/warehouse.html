@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仓库管理 - 运营后台</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+[v-cloak] { display: none !important; }
+html, body { height: 100%; }
+body { padding: 4px; overflow: hidden; }
+#app { height: 100%; display: flex; flex-direction: column; }
+.toolbar { flex: none; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.toolbar .spacer { flex: 1; }
+.tbl { flex: 1; min-height: 260px; display: flex; flex-direction: column;
+  background: #fff; border: 1px solid rgba(42,38,32,.1); border-radius: 10px; padding: 6px 14px 14px; }
+.tbl-body { flex: 1; min-height: 0; }
+.pager { flex: none; margin-top: 12px; text-align: right; }
+
+.wh-table .el-table__header th { background: var(--paper-2, #F5F2EC) !important; color: #2E4B3F;
+  font-weight: 600; font-size: 12px; letter-spacing: .06em; }
+.wh-table .el-table__body td { font-size: 13px; }
+.wh-table .el-table__row:hover > td { background: rgba(46,75,63,.035) !important; }
+
+.tbl-code { font-weight: 700; font-size: 13px; color: #2E4B3F; white-space: nowrap; letter-spacing: .04em; }
+.tbl-name { font-weight: 500; color: #4A463D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .1em; padding: 2px 8px;
+  border-radius: 6px; background: rgba(46,75,63,.08); color: #2E4B3F; font-variant-numeric: tabular-nums; }
+.tbl-addr { font-size: 12px; color: #6E6A61; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbl-date { font-size: 12px; color: #4A463D; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.st { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px; }
+.st.on { background: rgba(46,75,63,.1); color: #2E4B3F; }
+.st.off { background: rgba(180,83,58,.12); color: #B4533A; }
+.ref-note { font-size: 11px; color: #B0AA9C; margin-left: 6px; }
+
+.op button { background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  font-size: 12px; color: #6E6A61; font-family: inherit; padding: 3px 8px; }
+.op button:hover { color: #2E4B3F; border-color: rgba(42,38,32,.1); background: #F5F2EC; }
+.op button.warn:hover { color: #B4533A; border-color: rgba(180,83,58,.3); }
+
+.batch-bar { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 12px;
+  background: rgba(217,160,91,.1); border: 1px solid rgba(166,94,63,.22); border-radius: 8px;
+  font-size: 13px; color: #3C6151; }
+.batch-bar .cnt { font-weight: 700; color: #A65E3F; }
+.batch-bar .flex1 { flex: 1; }
+
+/* 弹窗 */
+.wh-dialog .el-dialog__body { padding-top: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <div class="toolbar">
+    <el-radio-group v-model="statusFilter" size="small" @change="search">
+      <el-radio-button label="">全部 {{ stats.all }}</el-radio-button>
+      <el-radio-button label="1">启用 {{ stats.on }}</el-radio-button>
+      <el-radio-button label="0">停用 {{ stats.off }}</el-radio-button>
+    </el-radio-group>
+    <el-input v-model.trim="keyword" placeholder="仓库编码 / 名称 / 城市" clearable
+              style="width:220px" @keyup.enter.native="search" @clear="search"></el-input>
+    <el-button icon="el-icon-search" @click="search">查询</el-button>
+    <el-button icon="el-icon-refresh" @click="resetFilter">重置</el-button>
+    <div class="spacer"></div>
+    <button class="btn-primary" type="button" @click="openDialog()" v-if="can('warehouse:create')">+ 新增仓库</button>
+  </div>
+
+  <!-- 批量操作条 -->
+  <div class="batch-bar" v-if="selected.length > 0">
+    <span>已选 <span class="cnt">{{ selected.length }}</span> 项</span>
+    <el-button size="mini" v-if="can('warehouse:status')" @click="batchStatus(1)">批量启用</el-button>
+    <el-button size="mini" v-if="can('warehouse:status')" @click="batchStatus(0)">批量停用</el-button>
+    <el-button size="mini" type="danger" plain v-if="can('warehouse:delete')" @click="batchDelete">批量删除</el-button>
+    <div class="flex1"></div>
+    <el-button size="mini" @click="clearSelection">取消选择</el-button>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-body">
+    <el-table ref="whTable" class="wh-table" :data="rows" v-loading="loading" height="100%"
+              @selection-change="onSelectionChange"
+              empty-text="还没有仓库，点右上角「新增仓库」建立基础资料">
+      <el-table-column type="selection" width="44" align="center"></el-table-column>
+      <el-table-column label="仓库编码" width="120">
+        <template slot-scope="s"><span class="tbl-code">{{ s.row.code }}</span></template>
+      </el-table-column>
+      <el-table-column label="仓库名称" min-width="150">
+        <template slot-scope="s"><span class="tbl-name">{{ s.row.name }}</span></template>
+      </el-table-column>
+      <el-table-column label="国家 / 城市" min-width="150">
+        <template slot-scope="s">
+          <span class="cc" v-if="s.row.country">{{ s.row.country }}</span>
+          <span style="margin-left:6px">{{ s.row.city || '—' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="详细地址" min-width="200" show-overflow-tooltip>
+        <template slot-scope="s"><span class="tbl-addr">{{ s.row.address || '—' }}</span></template>
+      </el-table-column>
+      <el-table-column label="状态" width="90" align="center">
+        <template slot-scope="s">
+          <span class="st" :class="s.row.status === 1 ? 'on' : 'off'">{{ s.row.status === 1 ? '启用' : '停用' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" width="110" align="center">
+        <template slot-scope="s"><span class="tbl-date">{{ fmtDate(s.row.create_time) }}</span></template>
+      </el-table-column>
+      <el-table-column label="操作" width="170" align="center" fixed="right">
+        <template slot-scope="s">
+          <span class="op">
+            <button type="button" v-if="can('warehouse:update')" @click="openDialog(s.row)">编辑</button>
+            <button type="button" v-if="can('warehouse:status')" @click="toggleStatus(s.row)">{{ s.row.status === 1 ? '停用' : '启用' }}</button>
+            <button type="button" class="warn" v-if="can('warehouse:delete')" @click="del(s.row)">删除</button>
+          </span>
+        </template>
+      </el-table-column>
+    </el-table>
+    </div>
+    <div class="pager">
+      <el-pagination background layout="total, prev, pager, next, sizes" :total="total"
+                     :current-page.sync="page" :page-size.sync="limit" :page-sizes="[20, 50, 100]"
+                     @current-change="load" @size-change="search"></el-pagination>
+    </div>
+  </div>
+
+  <!-- 新增 / 编辑弹窗 -->
+  <el-dialog :title="form.id ? '编辑仓库' : '新增仓库'" :visible.sync="dlg" width="560px" top="14vh" custom-class="wh-dialog">
+    <el-form ref="form" :model="form" :rules="rules" label-width="90px">
+      <div class="form-row">
+        <el-form-item label="仓库编码" prop="code">
+          <el-input v-model.trim="form.code" placeholder="如 SZX01" maxlength="32"></el-input>
+        </el-form-item>
+        <el-form-item label="仓库名称" prop="name">
+          <el-input v-model.trim="form.name" placeholder="如 深圳中转仓" maxlength="64"></el-input>
+        </el-form-item>
+      </div>
+      <div class="form-row">
+        <el-form-item label="国家" prop="country">
+          <el-select v-model="form.country" filterable allow-create default-first-option
+                     placeholder="选择或输入两位 ISO 代码" style="width:100%" clearable>
+            <el-option v-for="c in countries" :key="c" :value="c" :label="c"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="城市" prop="city">
+          <el-input v-model.trim="form.city" maxlength="64"></el-input>
+        </el-form-item>
+      </div>
+      <el-form-item label="详细地址">
+        <el-input v-model.trim="form.address" maxlength="255" placeholder="选填"></el-input>
+      </el-form-item>
+    </el-form>
+    <div slot="footer">
+      <el-button @click="dlg = false">取 消</el-button>
+      <button class="btn-primary" type="button" :disabled="saving" @click="submit">保 存</button>
+    </div>
+  </el-dialog>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+var API = 'http://127.0.0.1:8088/admin';
+var TOKEN = localStorage.getItem('hw_admin_token') || '';
+if (!TOKEN) { parent.location.href = 'login.html'; }
+
+function emptyWh() {
+  return { id: 0, code: '', name: '', country: '', city: '', address: '' };
+}
+
+new Vue({
+  el: '#app',
+  data: {
+    API: API, TOKEN: TOKEN,
+    perms: JSON.parse(localStorage.getItem('hw_admin_perms') || '["*"]'),
+    countries: ['CN', 'US', 'CA', 'GB', 'DE', 'FR', 'JP', 'KR', 'AU', 'NL'],
+    rows: [], total: 0, page: 1, limit: 20, loading: false,
+    statusFilter: '', keyword: '',
+    stats: { all: 0, on: 0, off: 0 },
+    selected: [],
+    dlg: false, saving: false, form: emptyWh(),
+    rules: {
+      code: [
+        { required: true, message: '请填写仓库编码', trigger: 'blur' },
+        { pattern: /^[A-Za-z0-9_-]{2,32}$/, message: '仅限大写字母/数字/-/_，2~32 位', trigger: 'blur' }
+      ],
+      name: [{ required: true, message: '请填写仓库名称', trigger: 'blur' }],
+      country: [
+        { pattern: /^[A-Za-z]{2}$/, message: '两位 ISO 代码，如 CN / US', trigger: 'change' }
+      ]
+    }
+  },
+  created: function () {
+    this.load();
+  },
+  methods: {
+    can: function (k) {
+      return this.perms.indexOf('*') >= 0 || this.perms.indexOf(k) >= 0;
+    },
+    load: function () {
+      var vm = this;
+      vm.loading = true;
+      vm.loadStats();
+      var qs = new URLSearchParams({
+        page: vm.page, limit: vm.limit,
+        keyword: vm.keyword, status: vm.statusFilter || ''
+      });
+      fetch(API + '/warehouse/list?' + qs, { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.rows = j.data;
+            vm.total = j.count;
+          } else if (j.code === 401) {
+            parent.location.href = 'login.html';
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.loading = false; });
+    },
+    loadStats: function () {
+      var vm = this;
+      fetch(API + '/warehouse/stats', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0 && j.data) { vm.stats = j.data; } })
+        .catch(function () {});
+    },
+    search: function () { this.page = 1; this.load(); },
+    onSelectionChange: function (sel) { this.selected = sel; },
+    clearSelection: function () { this.$refs.whTable.clearSelection(); },
+    batchStatus: function (state) {
+      var vm = this;
+      var names = this.selected.map(function (r) { return r.name; }).join('、');
+      this.$confirm('确认批量' + (state === 1 ? '启用' : '停用') + '「' + names + '」等 ' + this.selected.length + ' 个仓库吗？' +
+        (state === 0 ? '停用后货主将无法创建发往这些仓库的入库单。' : ''), '提示', {
+        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+      }).then(function () {
+        vm.runBatch(vm.selected, function (r) {
+          return fetch(API + '/warehouse/status', {
+            method: 'POST', headers: { token: TOKEN, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: r.id, status: state })
+          }).then(function (res) { return res.json(); });
+        }, function (done, fail, errs) {
+          if (fail === 0) { vm.$message.success('已批量' + (state === 1 ? '启用' : '停用') + ' ' + done + ' 个仓库'); }
+          else { vm.$message.warning(done + ' 个成功，' + fail + ' 个失败：' + errs[0]); }
+          vm.clearSelection();
+          vm.load();
+        });
+      }).catch(function () {});
+    },
+    batchDelete: function () {
+      var vm = this;
+      var names = this.selected.map(function (r) { return r.name; }).join('、');
+      this.$confirm('确认删除「' + names + '」等 ' + this.selected.length + ' 个仓库吗？删除后不可恢复。' +
+        '被入库单引用的仓库会自动跳过。', '批量删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(function () {
+        vm.runBatch(vm.selected, function (r) {
+          return fetch(API + '/warehouse/delete', {
+            method: 'POST', headers: { token: TOKEN, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: r.id })
+          }).then(function (res) { return res.json(); });
+        }, function (done, fail, errs) {
+          if (fail === 0) { vm.$message.success('已删除 ' + done + ' 个仓库'); }
+          else { vm.$message.warning(done + ' 个删除成功，' + fail + ' 个跳过：' + errs[0]); }
+          vm.clearSelection();
+          vm.load();
+        });
+      }).catch(function () {});
+    },
+    runBatch: function (list, request, done) {
+      var okN = 0, failN = 0, errs = [];
+      var chain = Promise.resolve();
+      list.forEach(function (r) {
+        chain = chain.then(function () {
+          return request(r).then(function (j) {
+            if (j.code === 0) { okN++; } else { failN++; errs.push(j.msg || r.name); }
+          }).catch(function () { failN++; errs.push(r.name + '：网络错误'); });
+        });
+      });
+      chain.then(function () { done(okN, failN, errs); });
+    },
+    resetFilter: function () {
+      this.statusFilter = ''; this.keyword = ''; this.page = 1; this.load();
+    },
+    fmtDate: function (v) {
+      if (!v) { return '—'; }
+      var s = String(v);
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) { return m[1] + '-' + m[2] + '-' + m[3]; }
+      var n = Number(s);
+      var d = new Date(n * 1000);
+      if (isNaN(n) || isNaN(d.getTime())) { return '—'; }
+      var p = function (x) { return x < 10 ? '0' + x : '' + x; };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    },
+    openDialog: function (row) {
+      var base = emptyWh();
+      if (row) {
+        Object.keys(base).forEach(function (k) {
+          if (row[k] !== undefined && row[k] !== null) { base[k] = row[k]; }
+        });
+      }
+      this.form = base;
+      this.dlg = true;
+      this.$nextTick(function () {
+        if (this.$refs.form) { this.$refs.form.clearValidate(); }
+      }.bind(this));
+    },
+    submit: function () {
+      var vm = this;
+      this.$refs.form.validate(function (ok) {
+        if (!ok) { return; }
+        vm.saving = true;
+        var url = vm.form.id > 0 ? API + '/warehouse/update' : API + '/warehouse/create';
+        fetch(url, {
+          method: 'POST',
+          headers: { token: TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify(vm.form)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) {
+              vm.$message.success(j.msg || '已保存');
+              vm.dlg = false;
+              vm.load();
+            } else {
+              vm.$message.error(j.msg || '保存失败');
+            }
+          })
+          .catch(function () { vm.$message.error('网络错误'); })
+          .finally(function () { vm.saving = false; });
+      });
+    },
+    toggleStatus: function (row) {
+      var vm = this;
+      var to = row.status === 1 ? 0 : 1;
+      this.$confirm('确认' + (to === 1 ? '启用' : '停用') + '「' + row.name + '」吗？' +
+        (to === 0 ? '停用后货主将无法创建发往该仓库的入库单。' : ''), '提示', {
+        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+      }).then(function () {
+        fetch(API + '/warehouse/status', {
+          method: 'POST',
+          headers: { token: TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: row.id, status: to })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) { vm.$message.success(j.msg || '已更新'); vm.load(); }
+            else { vm.$message.error(j.msg || '操作失败'); }
+          })
+          .catch(function () { vm.$message.error('网络错误'); });
+      }).catch(function () {});
+    },
+    del: function (row) {
+      var vm = this;
+      this.$confirm('确认删除「' + row.name + '」（' + row.code + '）吗？删除后不可恢复。', '删除仓库', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(function () {
+        fetch(API + '/warehouse/delete', {
+          method: 'POST',
+          headers: { token: TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: row.id })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) { vm.$message.success(j.msg || '已删除'); vm.load(); }
+            else { vm.$message.error(j.msg || '删除失败'); }
+          })
+          .catch(function () { vm.$message.error('网络错误'); });
+      }).catch(function () {});
+    }
+  }
+});
+</script>
+</body>
+</html>

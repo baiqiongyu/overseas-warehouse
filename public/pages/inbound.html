@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>入库管理 - 海外仓系统</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/portal.css">
+<style>
+/* 防模板闪烁（FOUC）：Vue 挂载完成前隐藏整个应用，挂载后 v-cloak 被移除自动显示 */
+[v-cloak] { display: none !important; }
+
+/* ---------- 左侧状态导航（与 SKU 页同款） ---------- */
+.inb-layout { display: flex; gap: 20px; align-items: flex-start; }
+.inb-layout > .card { flex: 1; min-width: 0; margin-bottom: 0; }
+.side-nav {
+  width: 176px; flex: none; background: #fff;
+  border: 1px solid var(--hairline); border-radius: var(--r-md);
+  padding: 14px 10px; position: sticky; top: 84px;
+}
+.side-nav .side-title {
+  font-size: 12px; color: var(--text-muted); letter-spacing: .1em;
+  padding: 2px 12px 10px; border-bottom: 1px solid var(--hairline); margin-bottom: 8px;
+}
+.side-nav a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; margin-bottom: 2px; border-radius: 6px;
+  font-size: 14px; color: var(--text-dark); cursor: pointer; user-select: none;
+  transition: background-color var(--dur-fast) ease-out;
+}
+.side-nav a:hover { background: var(--paper-2); }
+.side-nav a.active {
+  background: rgba(46, 75, 63, .08); color: var(--ink); font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.side-nav a .n { margin-left: auto; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.side-nav a.active .n { color: var(--ink-2); font-weight: 600; }
+.side-nav .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+
+/* ---------- 批量操作条 ---------- */
+.bulk-bar {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0 0 12px; padding: 8px 14px;
+  background: rgba(46, 75, 63, .06); border: 1px solid rgba(46, 75, 63, .12);
+  border-radius: 8px; font-size: 12.5px;
+}
+.bulk-n { color: var(--ink-2); margin-right: 6px; }
+.bulk-n b { font-family: var(--font-display); color: var(--ink); font-size: 13.5px; }
+.bulk-bar button {
+  background: none; border: 1px solid var(--hairline); border-radius: 6px; cursor: pointer;
+  font-size: 12px; color: var(--ink-2); font-family: var(--font-body);
+  padding: 4px 12px; transition: all var(--dur-fast) ease-out;
+}
+.bulk-bar button:hover { background: #fff; border-color: rgba(46, 75, 63, .3); color: var(--ink); }
+.bulk-bar button.warn:hover { color: var(--danger); border-color: rgba(180, 83, 58, .35); }
+.bulk-bar button.plain { border-color: transparent; color: var(--text-muted); }
+
+/* ---------- 表格 ---------- */
+.inb-table .el-table__header th {
+  background: var(--paper-2) !important; color: var(--ink);
+  font-weight: 600; font-size: 12px; letter-spacing: .06em;
+}
+.inb-table .el-table__header th .cell { padding: 0 8px; white-space: nowrap; }
+.inb-table .el-table__body td { font-size: 13px; color: var(--text-dark); }
+.inb-table .el-table__row:hover > td { background: rgba(46, 75, 63, .035) !important; }
+.inb-no { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--ink); white-space: nowrap; }
+.inb-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+/* 客户单号：独立列，单行截断 */
+.inb-ref {
+  font-size: 12.5px; color: var(--ink-2); cursor: default;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 到仓形态：标签 + 柜/托信息，一行排 */
+.inb-mode { display: flex; flex-direction: row; align-items: center; gap: 6px; min-width: 0; }
+.inb-sub {
+  min-width: 0; font-size: 11px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; cursor: default;
+}
+.inb-time { font-size: 12px; color: var(--text-dark); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* 备注：单行截断，hover 看全文 */
+.inb-remark {
+  font-size: 12.5px; color: var(--text-muted); cursor: default;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.inb-none { font-size: 12.5px; color: var(--text-light-muted); }
+/* popper 挂在 body 上，需全局样式 */
+.el-tooltip__popper.inb-remark-tip {
+  max-width: 340px !important; line-height: 1.7; font-size: 12.5px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.el-tooltip__popper.inb-tip-popper { line-height: 1.75; font-size: 12px; }
+.el-tooltip__popper.inb-tip-popper div { white-space: nowrap; }
+.inb-wh { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inb-sum { font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.inb-num { font-size: 12.5px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.biz-tag {
+  display: inline-block; font-size: 11px; letter-spacing: .04em; padding: 2px 9px;
+  border-radius: 999px; white-space: nowrap; flex: none;
+}
+.biz-tag.transfer { background: rgba(46, 75, 63, .1); color: var(--ink-2); }
+.biz-tag.dropship  { background: rgba(217, 160, 91, .16); color: var(--accent-ink); }
+.biz-tag.carton    { background: rgba(46, 75, 63, .05); color: var(--text-muted); }
+.inb-state { font-size: 12px; letter-spacing: .06em; font-weight: 600; white-space: nowrap; }
+.inb-state.s10 { color: #B0AA9C; }
+.inb-state.s20 { color: #2F6EA5; }
+.inb-state.s30 { color: #2F8A4C; }
+.inb-state.s90 { color: var(--danger); }
+.inb-op { display: flex; gap: 2px; white-space: nowrap; }
+.inb-op button {
+  background: none; border: 1px solid transparent; border-radius: 5px; cursor: pointer;
+  font-size: 12px; color: var(--text-muted); font-family: var(--font-body);
+  padding: 3px 3px; transition: all var(--dur-fast) ease-out;
+}
+.inb-op button:hover { color: var(--ink); border-color: var(--hairline); background: var(--paper-2); }
+.inb-op button.warn:hover { color: var(--danger); border-color: rgba(180, 83, 58, .3); }
+
+/* ==========================================================
+   新建 / 编辑弹窗：控制台式两栏
+   左栏分段申报，右栏深色实时汇总（数字即账单雏形）
+   ========================================================== */
+.inb-dlg { border-radius: 10px; overflow: hidden; }
+.inb-dlg .el-dialog__header { padding: 16px 26px 14px; border-bottom: 1px solid var(--hairline); }
+.inb-dlg .el-dialog__title { font-size: 17px; letter-spacing: .02em; }
+.inb-dlg .el-dialog__headerbtn { top: 18px; right: 20px; }
+.inb-dlg .el-dialog__body { padding: 0 26px; }
+/* 详情弹窗：固定高度，内部滚动（头部信息恒可见） */
+.dlg-scroll {
+  height: calc(72vh - 60px); min-height: 300px;
+  overflow-y: auto; overflow-x: hidden;
+  margin: 0 -26px; padding: 0 26px;
+  overscroll-behavior: contain;
+}
+.dlg-more {
+  text-align: center; padding: 10px 0 14px; font-size: 12.5px; color: var(--text-muted);
+}
+.dlg-more button {
+  background: none; border: 1px solid var(--hairline); border-radius: 6px; cursor: pointer;
+  font-size: 12px; color: var(--ink-2); font-family: var(--font-body); padding: 4px 16px;
+}
+.dlg-more button:hover { background: #fff; border-color: rgba(46, 75, 63, .3); }
+.inb-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) 292px;
+  height: calc(90vh - 58px);
+}
+.inb-main { overflow-y: auto; padding: 22px 26px 30px; }
+.inb-main::-webkit-scrollbar, .inb-side::-webkit-scrollbar { width: 8px; }
+.inb-main::-webkit-scrollbar-thumb { background: rgba(42, 38, 32, .18); border-radius: 4px; }
+.inb-side::-webkit-scrollbar-thumb { background: rgba(244, 241, 232, .22); border-radius: 4px; }
+
+/* ---------- 分段 ---------- */
+.sec { margin-bottom: 24px; }
+.sec-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.sec-h .idx {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  background: var(--ink); color: var(--paper);
+  font-size: 10.5px; display: grid; place-items: center;
+  font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.sec-h h4 {
+  margin: 0; font-family: var(--font-display); font-size: 14.5px;
+  font-weight: 700; letter-spacing: .02em; color: var(--ink);
+}
+.sec-h .hint { font-size: 11.5px; color: var(--text-muted); }
+.sec-h .line { flex: 1; height: 1px; background: var(--hairline); }
+
+/* ---------- 字段网格 ---------- */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > .fl { font-size: 12px; color: var(--text-muted); letter-spacing: .02em; }
+.field > .fl .req { color: var(--danger); font-style: normal; margin-left: 2px; }
+.field > .fl .sub { color: var(--text-light-muted); font-size: 11px; margin-left: 6px; letter-spacing: 0; }
+.field .el-select, .field .el-input-number, .field .el-date-editor, .field .el-input { width: 100%; }
+.dim-row { display: flex; align-items: center; gap: 6px; }
+.dim-row .x { color: var(--text-muted); font-size: 12px; flex: none; }
+
+/* ---------- 业务线分段按钮 ---------- */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg-btn {
+  text-align: left; font-family: var(--font-body); cursor: pointer;
+  border: 1px solid var(--hairline); background: #fff; border-radius: 8px;
+  padding: 9px 12px; display: flex; flex-direction: column; gap: 2px;
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.seg-btn b { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.seg-btn small { font-size: 11px; color: var(--text-muted); }
+.seg-btn:hover { border-color: rgba(46, 75, 63, .35); }
+.seg-btn.on { border-color: var(--ink); background: rgba(46, 75, 63, .05); }
+.seg-btn.on b { color: var(--ink); }
+.seg-btn.on small { color: var(--ink-2); }
+
+/* ---------- 到仓形态三卡 ---------- */
+.mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.mode {
+  position: relative; overflow: hidden; text-align: left; cursor: pointer;
+  font-family: var(--font-body); border: 1px solid var(--hairline); background: #fff;
+  border-radius: 10px; padding: 14px 14px 12px;
+  display: flex; flex-direction: column; gap: 7px;
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out,
+              transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.mode:hover { border-color: rgba(46, 75, 63, .4); transform: translateY(-1px); box-shadow: var(--shadow-1); }
+.mode .ic { width: 38px; height: 30px; color: var(--ink-2); }
+.mode .ic svg { width: 100%; height: 100%; display: block; }
+.mode .t { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--ink); }
+.mode .d { font-size: 11.5px; line-height: 1.55; color: var(--text-muted); }
+.mode .tag {
+  margin-top: 2px; align-self: flex-start; font-size: 10.5px; letter-spacing: .04em;
+  color: var(--accent-ink); background: rgba(217, 160, 91, .14);
+  border-radius: 4px; padding: 2px 7px;
+}
+.mode.on { border-color: var(--ink); background: rgba(46, 75, 63, .05); box-shadow: inset 0 0 0 1px var(--ink); }
+.mode.on .ic { color: var(--ink); }
+.mode.on .d { color: var(--ink-2); }
+.mode.on::after {
+  content: ""; position: absolute; top: 0; right: 0;
+  border-top: 20px solid var(--accent); border-left: 20px solid transparent;
+}
+
+/* 联动面板 */
+.mode-panel {
+  margin-top: 12px; border: 1px solid var(--hairline); border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0; background: rgba(46, 75, 63, .028);
+  padding: 14px 16px;
+  animation: panelIn var(--dur-base) var(--ease-out);
+}
+@keyframes panelIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.mode-panel .note { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; margin-top: 10px; }
+.mode-panel .note b { color: var(--ink-2); font-weight: 600; }
+.chip-row { display: flex; gap: 8px; }
+.chip {
+  flex: 1; cursor: pointer; font-family: var(--font-body); text-align: left;
+  border: 1px solid var(--hairline); background: #fff; border-radius: 8px;
+  padding: 8px 12px; transition: all var(--dur-fast) ease-out;
+}
+.chip b { display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.chip small { font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.chip:hover { border-color: rgba(46, 75, 63, .35); }
+.chip.on { background: var(--ink); border-color: var(--ink); }
+.chip.on b { color: var(--paper); }
+.chip.on small { color: var(--text-light-muted); }
+
+/* ---------- 箱卡 ---------- */
+.box-card {
+  position: relative; border: 1px solid var(--hairline); border-radius: 10px;
+  background: #fff; overflow: hidden;
+  transition: border-color var(--dur-fast) ease-out, box-shadow var(--dur-base) var(--ease-out);
+}
+.box-card + .box-card { margin-top: 10px; }
+.box-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: rgba(217, 160, 91, .45); transition: background-color var(--dur-fast) ease-out;
+}
+.box-card.open { border-color: rgba(46, 75, 63, .34); box-shadow: var(--shadow-1); }
+.box-card.open::before { background: var(--accent); }
+.box-hd { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 16px; }
+.box-seq {
+  font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+  letter-spacing: .06em; flex: none;
+}
+.box-no {
+  font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--ink);
+  white-space: nowrap; flex: none;
+}
+.box-no.auto { color: var(--text-muted); font-weight: 600; }
+.box-mult {
+  font-size: 11px; color: var(--accent-ink); background: rgba(217, 160, 91, .16);
+  border-radius: 4px; padding: 2px 7px; flex: none; font-variant-numeric: tabular-nums;
+}
+.box-dim, .box-sku {
+  font-size: 11.5px; color: var(--text-muted); white-space: nowrap;
+  font-variant-numeric: tabular-nums; flex: none;
+}
+.box-sku { margin-left: auto; }
+.box-acts { display: flex; gap: 2px; flex: none; }
+.box-acts button {
+  border: none; background: none; cursor: pointer; font-family: var(--font-body);
+  font-size: 12px; color: var(--text-muted); padding: 4px 9px; border-radius: 6px;
+  transition: all var(--dur-fast) ease-out;
+}
+.box-acts button:hover { color: var(--ink); background: var(--paper-2); }
+.box-acts button.warn:hover { color: var(--danger); background: rgba(180, 83, 58, .08); }
+.box-bd { padding: 4px 16px 16px; border-top: 1px dashed var(--hairline); }
+
+/* 箱唛预览条：订单号_箱号_序号 */
+.box-mark { display: flex; align-items: center; gap: 8px; padding: 0 14px 10px 16px; }
+.box-mark .k {
+  font-size: 9.5px; letter-spacing: .12em; color: var(--text-muted);
+  border: 1px solid var(--hairline); border-radius: 3px; padding: 1px 5px; flex: none;
+}
+.box-mark .v {
+  font-family: var(--font-display); font-weight: 600; font-size: 12px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.box-mark .v i { font-style: normal; color: var(--text-muted); margin: 0 5px; font-weight: 400; }
+.box-mark .v .ph { color: var(--text-light-muted); font-weight: 500; }
+.box-mark .n { font-size: 10.5px; color: var(--text-light-muted); margin-left: auto; flex: none; }
+/* 详情里的箱唛码 */
+.mark-code {
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  color: var(--ink); letter-spacing: .02em; font-variant-numeric: tabular-nums;
+}
+.mk-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.mk-hd .k { font-size: 12px; color: var(--text-muted); }
+.mk-hd .s { font-size: 11px; color: var(--text-light-muted); }
+
+/* 箱内 SKU */
+.sku-block { margin-top: 14px; }
+.sku-hd { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.sku-hd span:first-child { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.sku-hd .tip { font-size: 11px; color: var(--text-muted); }
+.sku-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sku-row .el-select { flex: 1; min-width: 0; }
+.sku-row .x { font-size: 12px; color: var(--text-muted); flex: none; }
+.sku-row .u { font-size: 11.5px; color: var(--text-muted); flex: none; }
+.sku-row .rm {
+  flex: none; width: 24px; height: 24px; border-radius: 6px; border: none; cursor: pointer;
+  background: none; color: var(--text-muted); font-size: 14px; line-height: 1;
+}
+.sku-row .rm:hover { color: var(--danger); background: rgba(180, 83, 58, .08); }
+.add-sku, .add-box {
+  border: 1px dashed rgba(46, 75, 63, .34); background: none; cursor: pointer;
+  color: var(--ink-2); font-family: var(--font-body); font-size: 12.5px;
+  border-radius: 8px; padding: 7px 14px;
+  transition: all var(--dur-fast) ease-out;
+}
+.add-sku:hover, .add-box:hover { background: rgba(46, 75, 63, .06); border-color: var(--ink); }
+.add-box { display: block; width: 100%; margin-top: 12px; padding: 11px; font-size: 13px; }
+.box-empty {
+  border: 1px dashed var(--hairline); border-radius: 10px; padding: 26px 20px;
+  text-align: center; font-size: 12.5px; color: var(--text-muted); background: rgba(242, 239, 232, .5);
+}
+.box-empty b { color: var(--ink-2); font-weight: 600; }
+
+/* ---------- 右侧汇总（深色仪表盘） ---------- */
+.inb-side {
+  background: var(--ink); color: var(--text-light);
+  padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 0;
+  overflow-y: auto;
+}
+.side-t {
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  letter-spacing: .16em; color: var(--text-light); opacity: .9;
+  padding-bottom: 12px; border-bottom: 1px solid rgba(244, 241, 232, .16); margin-bottom: 4px;
+}
+.sum-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 9px 0; border-bottom: 1px solid rgba(244, 241, 232, .08);
+}
+.sum-row .k { font-size: 12px; color: var(--text-light-muted); }
+.sum-row .v {
+  font-family: var(--font-display); font-weight: 700; font-size: 17px;
+  color: var(--text-light); font-variant-numeric: tabular-nums;
+}
+.sum-row .v small {
+  font-family: var(--font-body); font-size: 10.5px; font-weight: 400;
+  color: var(--text-light-muted); margin-left: 3px;
+}
+.gauge-wrap { padding: 14px 0 4px; }
+.gauge-hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+.gauge-hd span { font-size: 12px; color: var(--text-light-muted); }
+.gauge-hd b {
+  font-family: var(--font-display); font-size: 15px; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.gauge { height: 6px; background: rgba(244, 241, 232, .14); border-radius: 3px; overflow: hidden; }
+.gauge i {
+  display: block; height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, #C89154, var(--accent));
+  transition: width var(--dur-base) var(--ease-out);
+}
+.gauge.hi i { background: linear-gradient(90deg, #C4694A, var(--danger)); }
+.gauge.hi + .gauge-ft { color: #E2A78F; }
+.gauge-ft { font-size: 10.5px; color: var(--text-light-muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.side-note { margin-top: 16px; display: flex; flex-direction: column; gap: 5px; }
+.side-note p { margin: 0; font-size: 11px; line-height: 1.6; color: rgba(172, 184, 169, .82); }
+.side-act { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.side-act .btn-primary { width: 100%; height: 42px; background: var(--accent); color: var(--ink); letter-spacing: .1em; font-weight: 600; }
+.side-act .btn-primary:hover, .side-act .btn-primary:focus-visible { background: #E4B172; box-shadow: none; }
+.side-act .btn-ghost {
+  width: 100%; height: 36px; cursor: pointer; font-family: var(--font-body); font-size: 13px;
+  background: none; border: 1px solid rgba(244, 241, 232, .24); color: var(--text-light-muted);
+  border-radius: var(--r-md); transition: all var(--dur-fast) ease-out;
+}
+.side-act .btn-ghost:hover { color: var(--text-light); border-color: rgba(244, 241, 232, .5); }
+
+/* 附件 */
+.attach-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.attach-item {
+  display: flex; align-items: center; gap: 8px; max-width: 240px;
+  border: 1px solid var(--hairline); border-radius: 6px; padding: 6px 10px;
+  font-size: 12px; color: var(--text-dark); background: var(--paper-2);
+}
+.attach-item .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attach-item .rm {
+  border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: 13px; flex: none;
+}
+.attach-item .rm:hover { color: var(--danger); }
+.attach-empty { font-size: 12px; color: var(--text-muted); }
+
+/* ---------- 详情 ---------- */
+.dl-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px 24px;
+  font-size: 13px; margin-bottom: 18px;
+}
+.dl-grid .k { color: var(--text-muted); font-size: 12px; margin-bottom: 3px; }
+.dl-grid .v { color: var(--text-dark); }
+.d-tbl { width: 100%; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; }
+.d-tbl th, .d-tbl td { padding: 8px 12px; font-size: 12.5px; text-align: left; border-bottom: 1px solid var(--hairline); }
+.d-tbl th { background: var(--paper-2); color: var(--ink); font-weight: 600; }
+.d-tbl tr:last-child td { border-bottom: none; }
+.d-tbl img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; display: block; background: var(--paper-2); }
+.d-attach { display: flex; flex-wrap: wrap; gap: 10px; }
+.d-attach a {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+  color: var(--accent-ink); text-decoration: none;
+  border: 1px solid rgba(166, 94, 63, .25); border-radius: 6px; padding: 6px 12px;
+}
+.d-attach a:hover { background: rgba(217, 160, 91, .08); }
+
+@media (max-width: 1180px) {
+  .inb-body { grid-template-columns: 1fr; height: calc(92vh - 58px); }
+  .inb-main { padding: 18px 18px 26px; }
+  .inb-side { border-radius: 0; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .box-dim { display: none; }
+}
+
+@media (max-width: 720px) {
+  .inb-layout { flex-direction: column; }
+  .side-nav { width: 100%; position: static; display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  .side-nav .side-title { border: none; padding: 0 8px 0 4px; margin: 0; }
+  .side-nav a { margin: 0; padding: 7px 10px; }
+  .dl-grid { grid-template-columns: 1fr; }
+  .grid-2, .mode-grid { grid-template-columns: 1fr; }
+  .inb-dlg { width: 96% !important; }
+  .box-hd { flex-wrap: wrap; }
+  .box-sku { margin-left: 0; }
+}
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand"><span class="mark">仓</span><span class="name">海外仓系统 · 货主门户</span></div>
+    <nav class="nav">
+      <a href="home.html">首页</a>
+      <a href="profile.html">企业资料</a>
+      <a href="sku.html">产品管理</a>
+      <a href="inbound.html" class="active">入库管理</a>
+    </nav>
+    <div class="who">
+      <span><b>{{ user.realname }}</b>（{{ user.customer_code }}）</span>
+      <el-button size="mini" @click="logout">退出登录</el-button>
+    </div>
+  </header>
+
+  <main class="container wide">
+    <div class="page-head">
+      <h1>入库管理</h1>
+      <span class="sub">正向入库（头程 / 补货）· 提交后等待仓库确认预约，收货上架由仓库完成</span>
+    </div>
+
+    <div class="inb-layout">
+      <!-- 左侧状态导航 -->
+      <aside class="side-nav">
+        <div class="side-title">入库单</div>
+        <a :class="{ active: stateFilter === '' }" @click="filterState('')">
+          <span>全部</span><span class="n">{{ stats.all }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '10' }" @click="filterState('10')">
+          <span class="dot" style="background:#B0AA9C"></span><span>草稿</span><span class="n">{{ stats.draft }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '20' }" @click="filterState('20')">
+          <span class="dot" style="background:#2F6EA5"></span><span>待审核</span><span class="n">{{ stats.pending }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '30' }" @click="filterState('30')">
+          <span class="dot" style="background:#2F8A4C"></span><span>待入库</span><span class="n">{{ stats.approved }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '40' }" @click="filterState('40')">
+          <span class="dot" style="background:#C07A1D"></span><span>入库中</span><span class="n">{{ stats.receiving }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '50' }" @click="filterState('50')">
+          <span class="dot" style="background:#7A4FB0"></span><span>已入库</span><span class="n">{{ stats.received }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '60' }" @click="filterState('60')">
+          <span class="dot" style="background:#4A4A4A"></span><span>已上架</span><span class="n">{{ stats.shelved }}</span>
+        </a>
+        <a :class="{ active: stateFilter === '90' }" @click="filterState('90')">
+          <span class="dot" style="background:var(--danger)"></span><span>已取消</span><span class="n">{{ stats.canceled }}</span>
+        </a>
+      </aside>
+
+      <section class="card">
+        <div class="toolbar">
+          <el-input v-model.trim="keyword" placeholder="单号 / 柜号 / 客户单号" clearable
+                    style="width:186px" @keyup.enter.native="search" @clear="search"></el-input>
+          <el-select v-model="whFilter" size="small" clearable placeholder="全部仓库"
+                     style="width:122px" @change="search">
+            <el-option v-for="w in warehouses" :key="w.id" :value="w.id"
+                       :label="w.name + '（' + w.code + '）'"></el-option>
+          </el-select>
+          <el-select v-model="bizFilter" size="small" clearable placeholder="全部业务"
+                     style="width:100px" @change="search">
+            <el-option label="中转" :value="1"></el-option>
+            <el-option label="代发" :value="2"></el-option>
+          </el-select>
+          <el-select v-model="handlingFilter" size="small" clearable placeholder="全部形态"
+                     style="width:100px" @change="search">
+            <el-option label="集装箱" :value="1"></el-option>
+            <el-option label="托盘" :value="2"></el-option>
+            <el-option label="散箱" :value="3"></el-option>
+          </el-select>
+          <el-select v-model="dateField" size="small" style="width:104px" @change="search">
+            <el-option label="创建时间" value="create"></el-option>
+            <el-option label="预计到仓" value="expect"></el-option>
+          </el-select>
+          <el-date-picker v-model="dateRange" type="daterange" size="small"
+                          value-format="yyyy-MM-dd" range-separator="~"
+                          start-placeholder="开始" end-placeholder="结束"
+                          :picker-options="dateShortcuts" unlink-panels
+                          style="width:212px" @change="search"></el-date-picker>
+          <el-button icon="el-icon-search" @click="search">查询</el-button>
+          <el-button icon="el-icon-refresh" @click="resetFilter">重置</el-button>
+          <div class="spacer"></div>
+          <button class="btn-primary" type="button" @click="openDialog()">+ 新建入库单</button>
+        </div>
+
+        <div class="bulk-bar" v-if="selected.length">
+          <span class="bulk-n">已选 <b>{{ selected.length }}</b> 单</span>
+          <button type="button" @click="bulkSubmit">批量提交</button>
+          <button type="button" class="warn" @click="bulkRemove">批量删除</button>
+          <button type="button" class="plain" @click="clearSelect">取消选择</button>
+        </div>
+
+        <el-table ref="tbl" class="inb-table" :data="rows" v-loading="loading"
+                  @selection-change="onSelect"
+                  empty-text="还没有入库单，点右上角「新建入库单」开始第一批入仓">
+          <el-table-column type="selection" width="44" align="center" :selectable="canSelect"></el-table-column>
+          <el-table-column label="入库单号" width="120">
+            <template slot-scope="s">
+              <div class="inb-no">{{ s.row.order_no }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="客户单号" min-width="100">
+            <template slot-scope="s">
+              <el-tooltip v-if="s.row.ref_no" :content="s.row.ref_no" placement="top"
+                          popper-class="inb-tip-popper" :open-delay="250">
+                <div class="inb-ref">{{ s.row.ref_no }}</div>
+              </el-tooltip>
+              <span class="inb-none" v-else>—</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="目标仓库" width="74">
+            <template slot-scope="s">
+              <el-tooltip :content="s.row.warehouse_name + '（' + s.row.warehouse_code + '）'" placement="top"
+                          popper-class="inb-tip-popper" :open-delay="300">
+                <div class="inb-wh">{{ s.row.warehouse_name }}</div>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="业务线" width="62" align="center">
+            <template slot-scope="s">
+              <span class="biz-tag" :class="s.row.biz_type === 1 ? 'transfer' : 'dropship'">
+                {{ s.row.biz_type === 1 ? '中转' : '代发' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="到仓形态" width="102">
+            <template slot-scope="s">
+              <div class="inb-mode">
+                <span class="biz-tag" :class="modeClass(s.row.handling_type)">{{ handlingText(s.row.handling_type) }}</span>
+                <el-tooltip v-if="s.row.handling_type === 1" placement="top" :open-delay="150"
+                            popper-class="inb-tip-popper">
+                  <div slot="content">
+                    <div>柜型：{{ containerText(s.row.container_type) }}</div>
+                    <div>柜号：{{ s.row.container_no || '—' }}</div>
+                    <div>封条：{{ s.row.seal_no || '—' }}</div>
+                  </div>
+                  <span class="inb-sub">{{ s.row.container_no || '未填柜号' }}</span>
+                </el-tooltip>
+                <span class="inb-sub" v-else-if="s.row.handling_type === 2">{{ s.row.pallet_qty || 0 }} 托</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="箱数" width="44" align="right">
+            <template slot-scope="s"><span class="inb-num">{{ s.row.box_count }}</span></template>
+          </el-table-column>
+          <el-table-column label="件数" width="52" align="right">
+            <template slot-scope="s"><span class="inb-num">{{ s.row.total_qty }}</span></template>
+          </el-table-column>
+          <el-table-column label="SKU" width="44" align="right">
+            <template slot-scope="s">
+              <span class="inb-num" :title="s.row.attachment_count ? '含附件 ' + s.row.attachment_count + ' 个' : null">{{ s.row.sku_kinds }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="预计到仓" width="86">
+            <template slot-scope="s"><span class="inb-sum">{{ s.row.expect_time || '—' }}</span></template>
+          </el-table-column>
+          <el-table-column label="创建时间" width="116">
+            <template slot-scope="s"><span class="inb-time" :title="s.row.create_time">{{ (s.row.create_time || '').slice(0, 16) || '—' }}</span></template>
+          </el-table-column>
+          <el-table-column label="备注" min-width="50">
+            <template slot-scope="s">
+              <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
+                          popper-class="inb-remark-tip" :open-delay="150">
+                <div class="inb-remark">{{ s.row.remark }}</div>
+              </el-tooltip>
+              <span class="inb-none" v-else>—</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="84" align="center">
+            <template slot-scope="s">
+              <span class="inb-state" :class="'s' + s.row.state">{{ stateText(s.row.state) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="168" fixed="right">
+            <template slot-scope="s">
+              <div class="inb-op">
+                <button type="button" @click="openDetail(s.row)">详情</button>
+                <button type="button" v-if="s.row.state === 10" @click="openDialog(s.row)">编辑</button>
+                <button type="button" v-if="s.row.state === 10" @click="submit(s.row)">提交</button>
+                <button type="button" v-if="s.row.state === 10 || s.row.state === 20" class="warn" @click="cancel(s.row)">取消</button>
+                <button type="button" v-if="s.row.state === 10" class="warn" @click="remove(s.row)">删除</button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-pagination background layout="total, prev, pager, next, sizes"
+                       :total="total" :current-page.sync="page" :page-size.sync="limit"
+                       :page-sizes="[20, 50, 100]" @current-change="load" @size-change="load"
+                       style="margin-top:16px">
+        </el-pagination>
+      </section>
+    </div>
+
+    <!-- 新建/编辑弹窗 -->
+    <el-dialog :title="form.id ? '编辑入库单 · ' + form.order_no : '新建入库单'"
+               :visible.sync="dialogVisible" width="1180px" top="3vh"
+               custom-class="inb-dlg" :close-on-click-modal="false">
+      <div class="inb-body">
+        <div class="inb-main" ref="inbMain">
+
+          <!-- 01 收货信息 -->
+          <section class="sec">
+            <div class="sec-h">
+              <span class="idx">01</span><h4>收货信息</h4>
+              <span class="hint">这批货进哪个仓、走哪条业务线</span>
+              <span class="line"></span>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <span class="fl">目标仓库<i class="req">*</i></span>
+                <el-select v-model="form.warehouse_id" size="small" placeholder="选择仓库">
+                  <el-option v-for="w in warehouses" :key="w.id"
+                             :label="w.name + '（' + w.code + '）'" :value="w.id"></el-option>
+                </el-select>
+              </div>
+              <div class="field">
+                <span class="fl">客户单号</span>
+                <el-input v-model.trim="form.ref_no" size="small" maxlength="64"
+                          placeholder="你 ERP 里的单号，选填可搜"></el-input>
+              </div>
+            </div>
+            <div style="margin-top:14px">
+              <div class="field">
+                <span class="fl">业务线<i class="req">*</i></span>
+                <div class="seg">
+                  <button type="button" class="seg-btn" :class="{ on: form.biz_type === 1 }"
+                          @click="form.biz_type = 1">
+                    <b>中转入库</b><small>整批存储 · 按箱整出</small>
+                  </button>
+                  <button type="button" class="seg-btn" :class="{ on: form.biz_type === 2 }"
+                          @click="form.biz_type = 2">
+                    <b>代发入库</b><small>拆零上架 · 按单拣货</small>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02 到仓形态 -->
+          <section class="sec">
+            <div class="sec-h">
+              <span class="idx">02</span><h4>到仓形态</h4>
+              <span class="hint">决定仓库怎么接货、拆几层、按什么收费</span>
+              <span class="line"></span>
+            </div>
+            <div class="mode-grid">
+              <button type="button" class="mode" :class="{ on: form.handling_type === 1 }"
+                      @click="setHandling(1)">
+                <span class="ic">
+                  <svg viewBox="0 0 44 32" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linejoin="round" stroke-linecap="round">
+                    <path d="M4 10 H30 V26 H4 Z"/>
+                    <path d="M4 10 L10 5 H36 L30 10"/>
+                    <path d="M30 26 L36 21 V5"/>
+                    <path d="M9 10 V26 M14 10 V26 M19 10 V26 M24 10 V26" opacity=".38"/>
+                  </svg>
+                </span>
+                <span class="t">集装箱</span>
+                <span class="d">整柜直送仓，仓库接柜车、拆柜</span>
+                <span class="tag">拆 3 层 · 柜→托→箱</span>
+              </button>
+              <button type="button" class="mode" :class="{ on: form.handling_type === 2 }"
+                      @click="setHandling(2)">
+                <span class="ic">
+                  <svg viewBox="0 0 44 32" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linejoin="round" stroke-linecap="round">
+                    <rect x="10" y="4" width="22" height="10" rx="1"/>
+                    <path d="M10 9 H32" opacity=".38"/>
+                    <path d="M4 17 H38 L34 21 H8 Z"/>
+                    <path d="M10 21 V26 M20 21 V26 M30 21 V26"/>
+                    <path d="M8 26 H34"/>
+                  </svg>
+                </span>
+                <span class="t">托盘</span>
+                <span class="d">叉车卸托，仓库先点托再拆托</span>
+                <span class="tag">拆 2 层 · 托→箱</span>
+              </button>
+              <button type="button" class="mode" :class="{ on: form.handling_type === 3 }"
+                      @click="setHandling(3)">
+                <span class="ic">
+                  <svg viewBox="0 0 44 32" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linejoin="round" stroke-linecap="round">
+                    <rect x="4" y="17" width="16" height="12" rx="1"/>
+                    <rect x="23" y="17" width="16" height="12" rx="1"/>
+                    <rect x="13" y="4" width="16" height="12" rx="1"/>
+                    <path d="M12 17 V29 M31 17 V29 M21 4 V16" opacity=".38"/>
+                  </svg>
+                </span>
+                <span class="t">箱子</span>
+                <span class="d">散箱到仓，人工直接点箱签收</span>
+                <span class="tag">拆 1 层 · 只拆箱</span>
+              </button>
+            </div>
+
+            <!-- 集装箱 -->
+            <div class="mode-panel" v-if="form.handling_type === 1">
+              <div class="grid-2">
+                <div class="field">
+                  <span class="fl">集装箱规格<i class="req">*</i></span>
+                  <div class="chip-row">
+                    <button type="button" class="chip" :class="{ on: form.container_type === 1 }"
+                            @click="form.container_type = 1">
+                      <b>20 尺</b><small>20GP · 33.2 CBM</small>
+                    </button>
+                    <button type="button" class="chip" :class="{ on: form.container_type === 2 }"
+                            @click="form.container_type = 2">
+                      <b>40 尺</b><small>40HQ · 76.4 CBM</small>
+                    </button>
+                  </div>
+                </div>
+                <div class="field">
+                  <span class="fl">集装箱号<i class="req">*</i></span>
+                  <el-input v-model.trim="form.container_no" size="small" maxlength="32"
+                            placeholder="4 位字母 + 7 位数字，如 MSCU1234567"></el-input>
+                </div>
+              </div>
+              <div class="grid-2" style="margin-top:12px">
+                <div class="field">
+                  <span class="fl">海关封条号</span>
+                  <el-input v-model.trim="form.seal_no" size="small" maxlength="32"
+                            placeholder="选填，船公司封条号"></el-input>
+                </div>
+              </div>
+              <div class="note">
+                规格用于校验申报体积：<b>总体积超过理论容积 95% 会被拦下</b>，能在提交前发现箱数或尺寸填错。
+              </div>
+            </div>
+
+            <!-- 托盘 -->
+            <div class="mode-panel" v-else-if="form.handling_type === 2">
+              <div class="grid-3">
+                <div class="field">
+                  <span class="fl">托盘数量<i class="req">*</i></span>
+                  <el-input-number v-model="form.pallet_qty" :min="1" :max="999" :controls="false"
+                                   size="small"></el-input-number>
+                </div>
+              </div>
+              <div class="note">
+                托盘是计租单位，数量是仓库点托与计费的依据。<b>同托的箱在下方填同一个托盘号</b>，系统即可按托统计箱数。
+              </div>
+            </div>
+
+            <!-- 散箱 -->
+            <div class="mode-panel" v-else>
+              <div class="note" style="margin-top:0">
+                散箱到仓无需额外信息，仓库按箱直接清点签收。单票最多 500 箱。
+              </div>
+            </div>
+          </section>
+
+          <!-- 03 到仓时间 -->
+          <section class="sec">
+            <div class="sec-h">
+              <span class="idx">03</span><h4>到仓时间</h4>
+              <span class="hint">仓库据此排月台、约卸货人力</span>
+              <span class="line"></span>
+            </div>
+            <div class="grid-3">
+              <div class="field">
+                <span class="fl">预计到仓时间<i class="req">*</i></span>
+                <el-date-picker v-model="form.expect_time" type="date" value-format="yyyy-MM-dd"
+                                size="small" placeholder="选择日期"></el-date-picker>
+              </div>
+            </div>
+          </section>
+
+          <!-- 04 装箱明细 -->
+          <section class="sec">
+            <div class="sec-h">
+              <span class="idx">04</span><h4>装箱明细</h4>
+              <span class="hint">一箱一卡：编码、重量、尺寸、箱内 SKU</span>
+              <span class="line"></span>
+              <span class="hint" v-if="form.boxes.length" style="color:var(--ink-2);font-weight:600">
+                {{ boxStats.boxes }} 箱
+              </span>
+            </div>
+
+            <div v-if="!form.boxes.length" class="box-empty">
+              还没有箱子 —— 点下面「添加箱子」。<b>一个箱子可放多种 SKU</b>，数量按每箱填。
+            </div>
+
+            <div class="box-card" v-for="(box, bi) in form.boxes" :key="bi"
+                 :class="{ open: openBox === bi }">
+              <div class="box-hd">
+                <span class="box-seq">{{ pad2(bi + 1) }}</span>
+                <span class="box-no" :class="{ auto: !box.box_no }">{{ boxPlan[bi] ? boxPlan[bi].boxNo : '—' }}</span>
+                <span class="box-mult" v-if="box.count > 1">× {{ box.count }} 箱</span>
+                <span class="box-dim" v-if="box.length">{{ box.length }}×{{ box.width }}×{{ box.height }} cm</span>
+                <span class="box-dim" v-if="box.weight">{{ box.weight }} kg</span>
+                <span class="box-sku">{{ itemsSummary(box) }}</span>
+                <div class="box-acts">
+                  <button type="button" @click="toggleBox(bi)">{{ openBox === bi ? '收起' : '编辑' }}</button>
+                  <button type="button" class="warn" @click="removeBox(bi)">删除</button>
+                </div>
+              </div>
+
+              <!-- 箱唛：系统生成的唯一箱标，扫码入仓的入口 -->
+              <div class="box-mark" v-if="boxPlan[bi]">
+                <span class="k">箱唛</span>
+                <span class="v" :title="markFullText(bi)">
+                  <template v-if="form.order_no">{{ form.order_no }}<i>_</i></template>
+                  <span class="ph" v-else>{{ '{订单号}' }}<i>_</i></span>
+                  {{ boxPlan[bi].boxNo }}<i>_</i>{{ pad2(boxPlan[bi].seqFrom) }}
+                  <template v-if="boxPlan[bi].count > 1">
+                    <i>~</i>{{ pad2(boxPlan[bi].seqTo) }}
+                  </template>
+                </span>
+                <span class="n">{{ boxPlan[bi].count }} 张</span>
+              </div>
+
+              <div class="box-bd" v-show="openBox === bi">
+                <div class="grid-3">
+                  <div class="field" style="grid-column: span 2">
+                    <span class="fl">箱子编码<span class="sub">同号多箱共用</span></span>
+                    <el-input v-model.trim="box.box_no" size="small" maxlength="16"
+                              placeholder="A / CARTON01，留空自动编号"
+                              @input="onBoxNoInput(box)"></el-input>
+                  </div>
+                  <div class="field">
+                    <span class="fl">箱子数量<span class="sub">该编号下几个实体箱</span></span>
+                    <el-input-number v-model="box.count" :min="1" :max="500" :controls="false"
+                                     size="small"></el-input-number>
+                  </div>
+                </div>
+
+                <div class="grid-3" style="margin-top:12px">
+                  <div class="field">
+                    <span class="fl">单箱毛重（kg）</span>
+                    <el-input-number v-model="box.weight" :min="0" :max="9999" :precision="2"
+                                     :controls="false" size="small"></el-input-number>
+                  </div>
+                  <div class="field" style="grid-column: span 2">
+                    <span class="fl">外箱尺寸（cm）</span>
+                    <div class="dim-row">
+                      <el-input-number v-model="box.length" :min="0" :max="9999" :precision="1"
+                                       :controls="false" size="small"></el-input-number>
+                      <span class="x">×</span>
+                      <el-input-number v-model="box.width" :min="0" :max="9999" :precision="1"
+                                       :controls="false" size="small"></el-input-number>
+                      <span class="x">×</span>
+                      <el-input-number v-model="box.height" :min="0" :max="9999" :precision="1"
+                                       :controls="false" size="small"></el-input-number>
+                      <span class="x" v-if="boxCbm(box)">= {{ boxCbm(box) }} CBM/箱</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid-2" style="margin-top:12px" v-if="form.handling_type === 2">
+                  <div class="field">
+                    <span class="fl">托盘号</span>
+                    <el-input v-model.trim="box.pallet_no" size="small" maxlength="32"
+                              placeholder="同托的箱填同一个号"></el-input>
+                  </div>
+                </div>
+
+                <div class="sku-block">
+                  <div class="sku-hd">
+                    <span>箱内 SKU</span>
+                    <span class="tip">可放多种 SKU，数量按「每箱」计</span>
+                  </div>
+                  <div class="sku-row" v-for="(it, ii) in box.items" :key="'it' + ii">
+                    <el-select v-model="it.sku_id" filterable remote clearable size="small"
+                               :remote-method="searchSku" :loading="skuSearching"
+                               placeholder="输入 SKU 编码 / 品名搜索">
+                      <el-option v-for="op in skuPool" :key="op.id"
+                                 :label="op.sku_code + ' · ' + op.name_cn" :value="op.id">
+                        <span>{{ op.sku_code }}</span>
+                        <span style="float:right;color:#8492a6;font-size:12px">{{ op.name_cn }} · {{ op.barcode }}</span>
+                      </el-option>
+                    </el-select>
+                    <span class="x">×</span>
+                    <el-input-number v-model="it.qty" :min="1" :max="100000" :precision="0"
+                                     :controls="false" size="small" style="width:96px"></el-input-number>
+                    <span class="u">件/箱</span>
+                    <button type="button" class="rm" v-if="box.items.length > 1"
+                            @click="box.items.splice(ii, 1)" title="移除">×</button>
+                  </div>
+                  <button type="button" class="add-sku"
+                          @click="box.items.push({ sku_id: null, qty: 1 })">+ 添加 SKU</button>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="add-box" @click="addBox" :disabled="form.boxes.length >= 100">
+              + 添加箱子
+            </button>
+          </section>
+
+          <!-- 05 备注 / 附件 -->
+          <section class="sec" style="margin-bottom:4px">
+            <div class="sec-h">
+              <span class="idx">05</span><h4>备注与附件</h4>
+              <span class="hint">特殊要求、装箱单、发票</span>
+              <span class="line"></span>
+            </div>
+            <div class="field">
+              <span class="fl">备注</span>
+              <el-input v-model.trim="form.remark" type="textarea" :rows="2" maxlength="500"
+                        show-word-limit placeholder="易碎、需冷藏、卸货注意事项等"></el-input>
+            </div>
+            <div class="field" style="margin-top:14px">
+              <span class="fl">附件（装箱单 / 发票，jpg / png / webp / pdf，单个 ≤ 10MB，最多 10 个）</span>
+              <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+                <el-upload v-if="form.attachments.length < 10"
+                           :action="API_BASE + '/upload/attachment'"
+                           name="file"
+                           :headers="{ token: token }"
+                           :show-file-list="false"
+                           accept="image/jpeg,image/png,image/webp,application/pdf"
+                           :before-upload="beforeAttach"
+                           :on-success="onAttachSuccess"
+                           :on-error="onAttachError">
+                  <el-button size="small" icon="el-icon-upload2">上传附件</el-button>
+                </el-upload>
+                <div class="attach-list">
+                  <div class="attach-item" v-for="(a, i) in form.attachments" :key="i">
+                    <i :class="isPdf(a.file_name) ? 'el-icon-document' : 'el-icon-picture-outline'"></i>
+                    <span class="fname" :title="a.file_name">{{ a.file_name || a.url }}</span>
+                    <button type="button" class="rm" @click="form.attachments.splice(i, 1)">×</button>
+                  </div>
+                  <span v-if="form.attachments.length === 0" class="attach-empty">暂无附件</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 右侧实时汇总 -->
+        <aside class="inb-side">
+          <div class="side-t">申报汇总</div>
+          <div class="sum-row"><span class="k">箱数</span>
+            <span class="v">{{ boxStats.boxes }}<small>箱</small></span></div>
+          <div class="sum-row"><span class="k">SKU 种类</span>
+            <span class="v">{{ boxStats.kinds }}<small>种</small></span></div>
+          <div class="sum-row"><span class="k">总件数</span>
+            <span class="v">{{ boxStats.qty }}<small>件</small></span></div>
+          <div class="sum-row"><span class="k">总毛重</span>
+            <span class="v">{{ boxStats.weight }}<small>kg</small></span></div>
+          <div class="sum-row"><span class="k">总体积</span>
+            <span class="v">{{ boxStats.cbm }}<small>CBM</small></span></div>
+
+          <div class="gauge-wrap" v-if="loadRate !== null">
+            <div class="gauge-hd">
+              <span>装载率</span><b>{{ loadRate }}%</b>
+            </div>
+            <div class="gauge" :class="{ hi: loadRate > 95 }">
+              <i :style="{ width: Math.min(loadRate, 100) + '%' }"></i>
+            </div>
+            <div class="gauge-ft">{{ capacityText }} · 上限 95%</div>
+          </div>
+
+          <div class="side-note">
+            <p>· 箱唛 = 订单号_箱号_序号，一箱一张</p>
+            <p>· 同箱号多箱自动编号 A_01…A_10</p>
+            <p>· 箱号留空自动编号 BOX001</p>
+            <p>· 同一箱内 SKU 不可重复</p>
+          </div>
+
+          <div class="side-act">
+            <button class="btn-primary" type="button" :disabled="saving" @click="saveDraft">
+              {{ saving ? '保存中…' : '保存草稿' }}
+            </button>
+            <button class="btn-ghost" type="button" @click="dialogVisible = false">取 消</button>
+          </div>
+        </aside>
+      </div>
+    </el-dialog>
+
+    <!-- 详情弹窗 -->
+    <el-dialog :title="'入库单详情' + (detail.order_no ? ' · ' + detail.order_no : '')"
+               :visible.sync="detailVisible" width="860px" top="5vh">
+      <div class="dl-grid">
+        <div><div class="k">状态</div><div class="v"><span class="inb-state" :class="'s' + detail.state">{{ stateText(detail.state) }}</span></div></div>
+        <div><div class="k">目标仓库</div><div class="v">{{ detail.warehouse_name }}（{{ detail.warehouse_code }}）</div></div>
+        <div><div class="k">业务线</div><div class="v">{{ detail.biz_type === 1 ? '中转入库' : '代发入库' }}</div></div>
+        <div><div class="k">客户单号</div><div class="v">{{ detail.ref_no || '—' }}</div></div>
+        <div><div class="k">到仓形态</div><div class="v">{{ handlingText(detail.handling_type) }}</div></div>
+        <div v-if="detail.handling_type === 1"><div class="k">集装箱规格</div><div class="v">{{ containerText(detail.container_type) }}</div></div>
+        <div v-if="detail.handling_type === 1"><div class="k">集装箱号 / 封条号</div><div class="v">{{ detail.container_no || '—' }} / {{ detail.seal_no || '—' }}</div></div>
+        <div v-if="detail.handling_type === 2"><div class="k">托盘数量</div><div class="v">{{ detail.pallet_qty || 0 }} 托</div></div>
+        <div><div class="k">预计到仓</div><div class="v">{{ detail.expect_time || '—' }}</div></div>
+        <div><div class="k">创建时间</div><div class="v">{{ detail.create_time }}</div></div>
+        <div><div class="k">提交时间</div><div class="v">{{ detail.submit_time ? fmtTime(detail.submit_time) : '—' }}</div></div>
+        <div style="grid-column: 1 / -1"><div class="k">备注</div><div class="v">{{ detail.remark || '—' }}</div></div>
+      </div>
+
+      <!-- 滚动区：装箱明细（瀑布流加载）+ 整单汇总 + 附件 -->
+      <div class="dlg-scroll" ref="dscroll" @scroll="onDlgScroll">
+      <!-- 装箱明细（按箱） -->
+      <div class="mk-hd">
+        <span class="k">装箱明细 · 已加载 {{ (detail.boxes || []).length }} / 共 {{ detail.box_total || 0 }} 箱</span>
+        <span class="s" v-if="detailBoxSummary">{{ detailBoxSummary }}</span>
+        <el-button size="mini" icon="el-icon-printer" style="margin-left:auto"
+                   @click="printLabels">打印箱唛</el-button>
+      </div>
+      <div class="d-tbl" v-for="b in (detail.boxes || [])" :key="'b' + b.id" style="margin-bottom:12px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th colspan="5" style="background:rgba(46,75,63,.08)">
+                <span class="mark-code">{{ b.box_code || (detail.order_no + '_' + b.box_no + '_01') }}</span>
+                <span v-if="b.box_type_code" style="font-size:11px;color:var(--text-muted);margin-left:10px">{{ b.box_type_code }} {{ b.box_type_name }}</span>
+                <span v-if="b.length" style="font-size:11px;color:var(--text-muted);margin-left:10px">{{ b.length }}×{{ b.width }}×{{ b.height }}cm</span>
+                <span v-if="b.weight" style="font-size:11px;color:var(--text-muted);margin-left:10px">{{ b.weight }}kg</span>
+                <span v-if="b.pallet_no" style="font-size:11px;color:var(--text-muted);margin-left:10px">托 {{ b.pallet_no }}</span>
+                <span v-if="b.tracking_no" style="font-size:11px;color:var(--text-muted);margin-left:10px">运单 {{ b.tracking_no }}</span>
+                <span style="float:right;font-size:11px;color:var(--text-muted)">{{ (b.state === 20) ? '已收' : '待收' }}</span>
+              </th>
+            </tr>
+            <tr><th style="width:52px">图片</th><th>SKU</th><th>品名</th><th style="width:90px">本箱数量</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="it in b.items" :key="it.id">
+              <td><img :src="it.image" alt=""></td>
+              <td>
+                <div class="inb-no" style="font-size:12.5px">{{ it.sku_code }}</div>
+                <div class="inb-date">{{ it.barcode }}</div>
+              </td>
+              <td>{{ it.name_cn }}</td>
+              <td><b>{{ it.qty }}</b></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 整单 SKU 汇总 -->
+      <div class="k" style="font-size:12px;color:var(--text-muted);margin:6px 0 8px">整单 SKU 汇总（收货对账基准）</div>
+      <div class="d-tbl" style="margin-bottom:18px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr><th style="width:56px">图片</th><th>SKU</th><th>品名</th><th style="width:90px">应收</th><th style="width:90px">实收</th><th style="width:90px">已上架</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="it in detail.items" :key="it.id">
+              <td><img :src="it.image" alt=""></td>
+              <td>
+                <div class="inb-no" style="font-size:12.5px">{{ it.sku_code }}</div>
+                <div class="inb-date">{{ it.barcode }}</div>
+              </td>
+              <td>{{ it.name_cn }}</td>
+              <td><b>{{ it.expect_qty }}</b></td>
+              <td>{{ it.received_qty }}</td>
+              <td>{{ it.shelved_qty }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="k" style="font-size:12px;color:var(--text-muted);margin-bottom:8px">附件</div>
+      <div class="d-attach" v-if="detail.attachments && detail.attachments.length">
+        <a v-for="a in detail.attachments" :key="a.id" :href="a.file_url" target="_blank">
+          <i :class="isPdf(a.file_name) ? 'el-icon-document' : 'el-icon-picture-outline'"></i>{{ a.file_name || '附件' }}
+        </a>
+      </div>
+      <div v-else style="font-size:12.5px;color:#B0AA9C">无附件</div>
+      </div>
+
+      <!-- 瀑布流加载状态条 -->
+      <div class="dlg-more" v-if="detail.box_has_more || boxLoading">
+        <span v-if="boxLoading"><i class="el-icon-loading"></i> 加载中…</span>
+        <button v-else type="button" @click="loadMoreBoxes">加载更多箱明细</button>
+      </div>
+
+      <div slot="footer">
+        <el-button @click="detailVisible = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+const API_BASE = 'http://127.0.0.1:8088/customer';
+const token = localStorage.getItem('hw_token') || '';
+if (!token) { location.href = 'login.html'; }
+
+const STATE_TEXT = { 10: '○ 草稿', 20: '◔ 待审核', 30: '● 待入库', 40: '入库中', 50: '已入库', 60: '已上架', 90: '× 已取消' };
+
+/* 集装箱规格：只保留客户能确认的两种；3/4/5 为历史数据仅用于展示 */
+const CONTAINER_TEXT = { 0: '—', 1: '20 尺（20GP）', 2: '40 尺（40HQ）', 3: '40HQ（历史）', 4: '45HQ（历史）', 5: '特种柜（历史）' };
+const CONTAINER_CBM  = { 1: 33.2, 2: 76.4, 3: 76.4, 4: 86.1 };
+const CONTAINER_CAP  = { 1: '20GP 理论 33.2 CBM', 2: '40HQ 理论 76.4 CBM', 3: '40HQ 理论 76.4 CBM', 4: '45HQ 理论 86.1 CBM' };
+const CONTAINER_SHORT = { 0: '', 1: '20GP', 2: '40HQ', 3: '40HQ', 4: '45HQ', 5: '特种柜' };
+const HANDLING_TEXT  = { 1: '集装箱', 2: '托盘', 3: '散箱' };
+const HANDLING_HINT  = { 1: '整柜直送仓', 2: '托盘到仓', 3: '散箱到仓' };
+
+function dayOffset(n) {
+  var d = new Date();
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function emptyForm() {
+  return {
+    id: 0, order_no: '', warehouse_id: null, biz_type: 1, ref_no: '',
+    handling_type: 3, container_type: 0, container_no: '', seal_no: '',
+    pallet_qty: 1, expect_time: '', remark: '',
+    boxes: [], attachments: []
+  };
+}
+
+function emptyBox() {
+  return {
+    box_no: '', count: 1,
+    length: 0, width: 0, height: 0, weight: 0, pallet_no: '',
+    items: [{ sku_id: null, qty: 1 }]
+  };
+}
+
+new Vue({
+  el: '#app',
+  data: {
+    user: {},
+    rows: [], total: 0, page: 1, limit: 20,
+    keyword: '', stateFilter: '', whFilter: '', bizFilter: '', handlingFilter: '',
+    dateField: 'create', dateRange: [],
+    dateShortcuts: {
+      shortcuts: [
+        { text: '今天', onClick: function (picker) { picker.$emit('pick', [new Date(), new Date()]); } },
+        { text: '近 7 天', onClick: function (picker) { picker.$emit('pick', [dayOffset(-6), new Date()]); } },
+        { text: '近 30 天', onClick: function (picker) { picker.$emit('pick', [dayOffset(-29), new Date()]); } },
+        { text: '本月', onClick: function (picker) {
+          var d = new Date();
+          picker.$emit('pick', [new Date(d.getFullYear(), d.getMonth(), 1), new Date()]);
+        } }
+      ]
+    },
+    stats: { all: 0, draft: 0, pending: 0, approved: 0, receiving: 0, received: 0, shelved: 0, canceled: 0 },
+    loading: false, saving: false,
+    warehouses: [],
+    dialogVisible: false, detailVisible: false, boxLoading: false,
+    form: emptyForm(),
+    openBox: -1,
+    detail: {},
+    skuPool: [], skuSearching: false,
+    selected: []
+  },
+  created: function () {
+    try { this.user = JSON.parse(localStorage.getItem('hw_user') || '{}'); }
+    catch (e) { this.user = {}; }
+    this.loadWarehouses();
+    this.load();
+  },
+  computed: {
+    /** 实时汇总：箱数 / SKU 种类 / 总件数 / 总毛重 / 总体积（全部按箱数量加权） */
+    boxStats: function () {
+      var kinds = {}, qty = 0, weight = 0, cbm = 0, boxes = 0;
+      this.form.boxes.forEach(function (b) {
+        var c = Math.max(1, parseInt(b.count, 10) || 1);
+        boxes += c;
+        weight += (+b.weight || 0) * c;
+        cbm += ((+b.length || 0) * (+b.width || 0) * (+b.height || 0)) / 1000000 * c;
+        (b.items || []).forEach(function (it) {
+          if (it.sku_id && it.qty > 0) {
+            kinds[it.sku_id] = true;
+            qty += (+it.qty) * c;
+          }
+        });
+      });
+      return {
+        boxes: boxes,
+        kinds: Object.keys(kinds).length,
+        qty: qty,
+        weight: Math.round(weight * 100) / 100,
+        cbm: Math.round(cbm * 1000) / 1000
+      };
+    },
+    /** 装载率（%），仅集装箱到仓且已填容积时有值 */
+    loadRate: function () {
+      if (this.form.handling_type !== 1) { return null; }
+      var cap = CONTAINER_CBM[this.form.container_type];
+      if (!cap || !this.boxStats.cbm) { return null; }
+      return Math.round(this.boxStats.cbm / cap * 1000) / 10;
+    },
+    capacityText: function () {
+      return CONTAINER_CAP[this.form.container_type] || '未选规格';
+    },
+    /**
+     * 箱唛排布：与后端同一套算法 —— 箱号共用、序号跨行累加
+     * A×10 → A_01…A_10；再一行 A×2 → A_11、A_12；不填箱号整批生成 BOX001
+     */
+    boxPlan: function () {
+      var seqMap = {}, autoSeq = 0, plan = [];
+      this.form.boxes.forEach(function (b) {
+        var c = Math.max(1, parseInt(b.count, 10) || 1);
+        var no = (b.box_no || '').replace(/\s+/g, '').toUpperCase();
+        if (!no) {
+          autoSeq += 1;
+          no = 'BOX' + ('00' + autoSeq).slice(-3);
+          seqMap[no] = 1;
+        }
+        if (!seqMap[no]) { seqMap[no] = 1; }
+        var from = seqMap[no];
+        plan.push({ boxNo: no, seqFrom: from, seqTo: from + c - 1, count: c, auto: !b.box_no });
+        seqMap[no] = from + c;
+      });
+      return plan;
+    },
+    /** 详情页箱汇总：总毛重 / 总体积 */
+    detailBoxSummary: function () {
+      var boxes = this.detail.boxes || [];
+      if (!boxes.length) { return ''; }
+      var w = 0, v = 0;
+      boxes.forEach(function (b) {
+        w += (+b.weight || 0);
+        v += (+b.volume || 0);
+      });
+      var s = '总毛重 ' + (Math.round(w * 100) / 100) + ' kg';
+      if (v > 0) { s += ' · 总体积 ' + (Math.round(v * 1000) / 1000) + ' CBM'; }
+      return s;
+    }
+  },
+  methods: {
+    load: function () {
+      var vm = this;
+      vm.loading = true;
+      fetch(API_BASE + '/inbound/stats', { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0) { vm.stats = j.data; } })
+        .catch(function () {});
+      var qs = new URLSearchParams({
+        page: vm.page, limit: vm.limit,
+        keyword: vm.keyword, state: vm.stateFilter,
+        date_field: vm.dateField,
+        date_start: (vm.dateRange && vm.dateRange[0]) || '',
+        date_end: (vm.dateRange && vm.dateRange[1]) || '',
+        warehouse_id: vm.whFilter || '',
+        biz_type: vm.bizFilter || '',
+        handling_type: vm.handlingFilter || ''
+      });
+      fetch(API_BASE + '/inbound/list?' + qs, { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.rows = j.data.map(function (r) { return r; });
+            vm.total = j.count;
+            vm.selected = [];
+            if (vm.$refs.tbl) { vm.$refs.tbl.clearSelection(); }
+          } else if (j.code === 401) {
+            location.href = 'login.html';
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.loading = false; });
+    },
+    loadWarehouses: function () {
+      var vm = this;
+      fetch(API_BASE + '/inbound/warehouses', { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0) { vm.warehouses = j.data; } })
+        .catch(function () {});
+    },
+    search: function () { this.page = 1; this.load(); },
+    resetFilter: function () {
+      this.keyword = ''; this.stateFilter = ''; this.whFilter = '';
+      this.bizFilter = ''; this.handlingFilter = '';
+      this.dateField = 'create'; this.dateRange = [];
+      this.page = 1; this.load();
+    },
+    filterState: function (v) { this.stateFilter = v; this.page = 1; this.load(); },
+    stateText: function (s) { return STATE_TEXT[s] || ('状态 ' + s); },
+    fmtTime: function (ts) {
+      var d = new Date(ts * 1000);
+      var p = function (n) { return (n < 10 ? '0' : '') + n; };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    },
+    isPdf: function (name) { return /\.pdf$/i.test(name || ''); },
+
+    /* ---------- 到仓形态 ---------- */
+    setHandling: function (t) {
+      var f = this.form;
+      if (f.handling_type === t) { return; }
+      f.handling_type = t;
+      if (t === 1) {
+        if (!f.container_type) { f.container_type = 2; } // 40 尺是当前主流柜型
+        f.pallet_qty = 0;
+      } else if (t === 2) {
+        if (!f.pallet_qty) { f.pallet_qty = 1; }
+        f.container_type = 0; f.container_no = ''; f.seal_no = '';
+      } else {
+        f.container_type = 0; f.container_no = ''; f.seal_no = ''; f.pallet_qty = 0;
+      }
+    },
+    handlingHint: function (v) { return HANDLING_HINT[v] || '—'; },
+
+    /* ---------- 箱卡 ---------- */
+    pad2: function (n) { return (n < 10 ? '0' : '') + n; },
+    addBox: function () {
+      if (this.form.boxes.length >= 100) {
+        this.$message.warning('单票最多 100 行箱子，更多请分单申报');
+        return;
+      }
+      this.form.boxes.push(emptyBox());
+      this.openBox = this.form.boxes.length - 1;
+      var vm = this;
+      this.$nextTick(function () {
+        var el = vm.$refs.inbMain;
+        if (el) { el.scrollTop = el.scrollHeight; }
+      });
+    },
+    toggleBox: function (bi) { this.openBox = (this.openBox === bi ? -1 : bi); },
+    removeBox: function (bi) {
+      this.form.boxes.splice(bi, 1);
+      if (this.openBox >= this.form.boxes.length) { this.openBox = this.form.boxes.length - 1; }
+    },
+    /** 单箱体积 CBM（仅展示） */
+    boxCbm: function (box) {
+      var v = (+box.length || 0) * (+box.width || 0) * (+box.height || 0) / 1000000;
+      return v > 0 ? (Math.round(v * 1000) / 1000) : 0;
+    },
+    /** 箱头摘要：N 种 SKU · X 件/箱（箱数 > 1 时附合计） */
+    itemsSummary: function (box) {
+      var list = (box.items || []).filter(function (it) { return it.sku_id && it.qty > 0; });
+      var per = 0;
+      list.forEach(function (it) { per += +it.qty; });
+      var c = Math.max(1, parseInt(box.count, 10) || 1);
+      return list.length + ' 种 SKU · ' + per + ' 件/箱' + (c > 1 ? ' · 合计 ' + (per * c) + ' 件' : '');
+    },
+    /* ---------- 箱唛 ---------- */
+    /** 箱号输入：实时收敛为大写字母数字，避免「-」「_」混进箱号破坏扫码解析 */
+    onBoxNoInput: function (box) {
+      var v = (box.box_no || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16);
+      if (v !== box.box_no) { box.box_no = v; }
+    },
+    /** 箱唛完整文本（hover 提示 / 复制） */
+    markFullText: function (bi) {
+      var p = this.boxPlan[bi];
+      if (!p) { return ''; }
+      var ord = this.form.order_no || '{订单号}';
+      var a = ord + '_' + p.boxNo + '_' + this.pad2(p.seqFrom);
+      if (p.count <= 1) { return a; }
+      return a + '  …  ' + ord + '_' + p.boxNo + '_' + this.pad2(p.seqTo) + '（共 ' + p.count + ' 张）';
+    },
+    handlingText: function (v) { return HANDLING_TEXT[v] || '—'; },
+    containerText: function (v) { return CONTAINER_TEXT[v] || '—'; },
+    containerShort: function (v) { return CONTAINER_SHORT[v] || ''; },
+    /** 形态标签配色：集装箱绿 / 托盘金 / 散箱灰 */
+    modeClass: function (t) {
+      return t === 1 ? 'transfer' : (t === 2 ? 'dropship' : 'carton');
+    },
+    searchSku: function (q) {
+      var vm = this;
+      vm.skuSearching = true;
+      var qs = new URLSearchParams({ keyword: q || '', status: 1, limit: 20 });
+      fetch(API_BASE + '/product/list?' + qs, { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            // 合并搜索结果与已选项（保证已选 SKU 始终在候选中）
+            var merged = j.data.slice();
+            vm.form.boxes.forEach(function (b) {
+              b.items.forEach(function (it) {
+                if (it.sku_id && !merged.some(function (x) { return x.id === it.sku_id; })) {
+                  var hit = vm.skuPool.find(function (x) { return x.id === it.sku_id; });
+                  if (hit) { merged.push(hit); }
+                }
+              });
+            });
+            vm.skuPool = merged;
+          }
+        })
+        .catch(function () {})
+        .finally(function () { vm.skuSearching = false; });
+    },
+
+    /* ---------- 附件 ---------- */
+    beforeAttach: function (file) {
+      var okType = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].indexOf(file.type) !== -1;
+      if (!okType) { this.$message.error('仅支持 jpg / png / webp / pdf'); return false; }
+      if (file.size > 10 * 1024 * 1024) { this.$message.error('附件不能超过 10MB'); return false; }
+      return true;
+    },
+    onAttachSuccess: function (res) {
+      if (res.code === 0 && res.data && res.data.url) {
+        this.form.attachments.push({ url: res.data.url, file_name: res.data.file_name || '' });
+      } else {
+        this.$message.error(res.msg || '上传失败');
+      }
+    },
+    onAttachError: function () { this.$message.error('上传失败，请重试'); },
+
+    /* ---------- 单据操作 ---------- */
+    openDialog: function (row) {
+      var vm = this;
+      vm.skuPool = [];
+      vm.openBox = -1;
+      if (row) {
+        // 编辑草稿：拉详情回显（库里已按箱展开，编辑时每卡数量重置为 1）
+        fetch(API_BASE + '/inbound/detail?id=' + row.id, { headers: { token: token } })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code !== 0) { vm.$message.error(j.msg || '加载失败'); return; }
+            var d = j.data;
+            vm.form = {
+              id: d.id, order_no: d.order_no,
+              warehouse_id: d.warehouse_id, biz_type: d.biz_type,
+              ref_no: d.ref_no || '',
+              handling_type: d.handling_type || 3,
+              container_type: d.container_type || 0,
+              container_no: d.container_no || '', seal_no: d.seal_no || '',
+              pallet_qty: d.pallet_qty || 1,
+              expect_time: d.expect_time || '',
+              remark: d.remark || '',
+              boxes: (d.boxes || []).map(function (b) {
+                return {
+                  box_no: b.box_no,
+                  count: 1,
+                  length: +b.length || 0, width: +b.width || 0, height: +b.height || 0,
+                  weight: +b.weight || 0,
+                  pallet_no: b.pallet_no || '',
+                  items: (b.items || []).map(function (it) { return { sku_id: it.sku_id, qty: it.qty }; })
+                };
+              }),
+              attachments: (d.attachments || []).map(function (a) { return { url: a.file_url, file_name: a.file_name }; })
+            };
+            // 已选 SKU 注入候选池，保证下拉里能看到当前值
+            (d.boxes || []).forEach(function (b) {
+              (b.items || []).forEach(function (it) {
+                if (!vm.skuPool.some(function (x) { return x.id === it.sku_id; })) {
+                  vm.skuPool.push({
+                    id: it.sku_id, sku_code: it.sku_code, name_cn: it.name_cn, barcode: it.barcode
+                  });
+                }
+              });
+            });
+            vm.dialogVisible = true;
+          })
+          .catch(function () { vm.$message.error('网络错误'); });
+      } else {
+        vm.form = emptyForm();
+        vm.dialogVisible = true;
+      }
+    },
+
+    validateForm: function () {
+      var vm = this, f = vm.form;
+      if (!f.warehouse_id) { vm.$message.error('请选择目标仓库'); return false; }
+      if (f.biz_type !== 1 && f.biz_type !== 2) { vm.$message.error('请选择业务线'); return false; }
+      if (f.handling_type !== 1 && f.handling_type !== 2 && f.handling_type !== 3) {
+        vm.$message.error('请选择到仓形态'); return false;
+      }
+
+      // 到仓形态对应必填项
+      if (f.handling_type === 1) {
+        if (f.container_type !== 1 && f.container_type !== 2) {
+          vm.$message.error('请选择集装箱规格（20 尺 / 40 尺）'); return false;
+        }
+        var no = (f.container_no || '').replace(/[\s-]/g, '').toUpperCase();
+        if (!no) { vm.$message.error('请填写集装箱号'); return false; }
+        if (!/^[A-Z]{4}\d{7}$/.test(no)) {
+          vm.$message.error('集装箱号应为 4 位字母 + 7 位数字，如 MSCU1234567'); return false;
+        }
+      }
+      if (f.handling_type === 2 && (!f.pallet_qty || f.pallet_qty < 1)) {
+        vm.$message.error('请填写托盘数量'); return false;
+      }
+      if (!f.expect_time) { vm.$message.error('请填写预计到仓时间'); return false; }
+      if (!f.boxes.length) { vm.$message.error('请至少添加一个箱子'); return false; }
+
+      var totalBoxes = 0;
+      for (var i = 0; i < f.boxes.length; i++) {
+        var b = f.boxes[i];
+        var c = Math.max(1, parseInt(b.count, 10) || 1);
+        totalBoxes += c;
+        var tag = b.box_no ? ('箱子 ' + b.box_no) : ('第 ' + (i + 1) + ' 个箱子');
+        if (!b.items || !b.items.length) { vm.$message.error(tag + ' 内没有 SKU'); return false; }
+        for (var k = 0; k < b.items.length; k++) {
+          var it = b.items[k];
+          if (!it.sku_id) { vm.$message.error(tag + ' 第 ' + (k + 1) + ' 行未选择 SKU'); return false; }
+          if (!it.qty || it.qty < 1) { vm.$message.error(tag + ' 第 ' + (k + 1) + ' 行数量必须 ≥ 1'); return false; }
+        }
+        var ids = b.items.map(function (x) { return x.sku_id; });
+        if (new Set(ids).size !== ids.length) { vm.$message.error(tag + ' 内 SKU 重复，请合并数量'); return false; }
+        if (!b.weight) { vm.$message.error(tag + ' 未填写重量'); return false; }
+        if (!b.length || !b.width || !b.height) { vm.$message.error(tag + ' 未填写尺寸'); return false; }
+      }
+      if (totalBoxes > 500) {
+        vm.$message.error('单票最多 500 箱，当前 ' + totalBoxes + ' 箱，请分单申报'); return false;
+      }
+
+      // 箱号只允许字母数字：箱唛用「_」分段，箱号里混进分隔符会让扫码解析歧义
+      // 同号多箱是合法的（A×10 → A_01…A_10），靠序号区分，不再做撞号校验
+      for (var j = 0; j < f.boxes.length; j++) {
+        var bn = (f.boxes[j].box_no || '').replace(/\s+/g, '').toUpperCase();
+        if (bn && !/^[A-Z0-9]{1,16}$/.test(bn)) {
+          vm.$message.error('第 ' + (j + 1) + ' 行箱号「' + f.boxes[j].box_no + '」只能填字母或数字（最多 16 位）'); return false;
+        }
+      }
+      return true;
+    },
+
+    saveDraft: function () {
+      var vm = this;
+      if (!vm.validateForm()) { return; }
+      vm.saving = true;
+      var f = vm.form;
+      var body = {
+        warehouse_id: f.warehouse_id, biz_type: f.biz_type,
+        ref_no: f.ref_no || '',
+        handling_type: f.handling_type,
+        container_type: f.handling_type === 1 ? (f.container_type || 0) : 0,
+        container_no: f.handling_type === 1 ? f.container_no : '',
+        seal_no: f.handling_type === 1 ? f.seal_no : '',
+        pallet_qty: f.handling_type === 2 ? (f.pallet_qty || 0) : 0,
+        expect_time: f.expect_time || '',
+        remark: f.remark,
+        boxes: f.boxes.map(function (b) {
+          return {
+            box_no: b.box_no || '', count: b.count || 1,
+            length: b.length || 0, width: b.width || 0, height: b.height || 0,
+            weight: b.weight || 0, pallet_no: b.pallet_no || '', items: b.items
+          };
+        }),
+        attachments: f.attachments
+      };
+      var url = f.id ? '/inbound/update' : '/inbound/create';
+      if (f.id) { body.id = f.id; }
+      fetch(API_BASE + url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token: token },
+        body: JSON.stringify(body)
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.$message.success(j.msg);
+            vm.dialogVisible = false;
+            vm.load();
+          } else {
+            vm.$message.error(j.msg || '保存失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.saving = false; });
+    },
+    /* ---------- 详情瀑布流加载 ---------- */
+    /** 滚动接近底部时自动取下一页箱明细 */
+    onDlgScroll: function () {
+      var el = this.$refs.dscroll;
+      if (!el || this.boxLoading || !this.detail.box_has_more) { return; }
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) {
+        this.loadMoreBoxes();
+      }
+    },
+    loadMoreBoxes: function () {
+      var vm = this;
+      if (vm.boxLoading || !vm.detail.box_has_more) { return; }
+      vm.boxLoading = true;
+      var next = (parseInt(vm.detail.box_page, 10) || 1) + 1;
+      fetch(API_BASE + '/inbound/boxes?id=' + vm.detail.id + '&page=' + next + '&limit=' + (vm.detail.box_limit || 8),
+        { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          vm.boxLoading = false;
+          if (j.code === 0) {
+            vm.detail.boxes = (vm.detail.boxes || []).concat(j.data.list);
+            vm.detail.box_page = j.data.page;
+            vm.detail.box_total = j.data.total;
+            vm.detail.box_has_more = j.data.has_more;
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.boxLoading = false; vm.$message.error('网络错误'); });
+    },
+    openDetail: function (row) {
+      var vm = this;
+      fetch(API_BASE + '/inbound/detail?id=' + row.id, { headers: { token: token } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.detail = j.data;
+            vm.boxLoading = false;
+            vm.detailVisible = true;
+            vm.$nextTick(function () { if (vm.$refs.dscroll) { vm.$refs.dscroll.scrollTop = 0; } });
+          }
+          else { vm.$message.error(j.msg || '加载失败'); }
+        })
+        .catch(function () { vm.$message.error('网络错误'); });
+    },
+    /** 打印箱唛：每箱一张标签（条码内容 = 订单号_箱号_序号），新窗口直接调起打印 */
+    printLabels: function () {
+      var vm = this, d = vm.detail;
+      if (!d.box_total) { vm.$message.warning('没有箱子可打印'); return; }
+      // 只加载了瀑布流前几页时，先取全量箱码
+      if ((d.boxes || []).length < d.box_total) {
+        fetch(API_BASE + '/inbound/boxes?id=' + d.id + '&page=1&limit=200', { headers: { token: token } })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) { vm.printLabelsRender(j.data.list); }
+            else { vm.$message.error(j.msg || '加载箱明细失败'); }
+          })
+          .catch(function () { vm.$message.error('网络错误'); });
+        return;
+      }
+      vm.printLabelsRender(d.boxes);
+    },
+    printLabelsRender: function (boxes) {
+      var vm = this, d = vm.detail;
+      var total = boxes.length;
+
+      var rows = boxes.map(function (b, i) {
+        var code = b.box_code || (d.order_no + '_' + b.box_no + '_' + vm.pad2(b.box_seq || 1));
+        var kinds = (b.items || []).length, qty = 0;
+        (b.items || []).forEach(function (it) { qty += (+it.qty || 0); });
+        return '<div class="lbl">'
+          + '<div class="top"><span class="t">入库箱唛</span><span class="i">' + (i + 1) + ' / ' + total + '</span></div>'
+          + '<div class="ord">' + vm.htmlEsc(d.order_no) + '</div>'
+          + '<div class="no">' + vm.htmlEsc(b.box_no) + '_' + vm.pad2(b.box_seq || 1) + '</div>'
+          + '<svg class="bc" data-code="' + vm.htmlEsc(code) + '"></svg>'
+          + '<div class="ft">'
+          + '<span>' + vm.htmlEsc(code) + '</span>'
+          + '<span>' + kinds + ' 种 SKU · ' + qty + ' 件' + (b.weight ? ' · ' + b.weight + ' kg' : '') + '</span>'
+          + '</div></div>';
+      }).join('');
+
+      var w = window.open('', '_blank');
+      if (!w) { vm.$message.warning('浏览器拦截了新窗口，请允许弹窗后重试'); return; }
+
+      var css = '*{box-sizing:border-box;margin:0;padding:0}'
+        + 'body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f1e8;padding:16px}'
+        + '.bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;color:#4a473f}'
+        + '.bar button{margin-left:auto;padding:7px 18px;border:1px solid #2e4b3f;background:#2e4b3f;color:#fff;border-radius:6px;cursor:pointer;font-size:13px}'
+        + '.sheet{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}'
+        + '.lbl{background:#fff;border:1px solid #d8d2c2;border-radius:6px;padding:10px 12px;break-inside:avoid;page-break-inside:avoid}'
+        + '.lbl .top{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.14em;color:#8a8577;border-bottom:1px solid #e8e3d5;padding-bottom:5px;margin-bottom:7px}'
+        + '.lbl .ord{font-size:12px;color:#5b5749;letter-spacing:.04em;font-variant-numeric:tabular-nums}'
+        + '.lbl .no{font-size:30px;font-weight:800;color:#1f3529;line-height:1.15;margin:1px 0 5px;font-variant-numeric:tabular-nums}'
+        + '.lbl svg.bc{width:100%;height:54px;display:block}'
+        + '.lbl .code{font-family:monospace;font-size:11px;letter-spacing:.05em;border:1px dashed #c8c2b2;padding:10px 0;text-align:center;color:#1f3529}'
+        + '.lbl .ft{display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#8a8577;margin-top:6px;border-top:1px solid #e8e3d5;padding-top:5px}'
+        + '.lbl .ft span:first-child{font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+        + '@media print{body{background:#fff;padding:0}.bar{display:none}.sheet{gap:6mm}.lbl{border:1px solid #aaa}}';
+
+      var js = 'window.addEventListener("load",function(){'
+        + 'var ok=(typeof JsBarcode==="function");'
+        + 'document.querySelectorAll("svg.bc").forEach(function(el){'
+        + 'var c=el.getAttribute("data-code");'
+        + 'if(ok){try{JsBarcode(el,c,{format:"CODE128",displayValue:false,height:54,width:1.6,margin:0});}catch(e){ok=false;}}'
+        + 'if(!ok){var d=document.createElement("div");d.className="code";d.textContent=c;el.parentNode.replaceChild(d,el);}'
+        + '});'
+        + '});';
+
+      var html = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
+        + '<title>箱唛 · ' + vm.htmlEsc(d.order_no) + '</title>'
+        + '<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>'
+        + '<style>' + css + '</style></head><body>'
+        + '<div class="bar"><span>共 ' + total + ' 张 · ' + vm.htmlEsc(d.order_no) + '</span>'
+        + '<button onclick="window.print()">打 印</button></div>'
+        + '<div class="sheet">' + rows + '</div>'
+        + '<script>' + js + '<\/script></body></html>';
+
+      w.document.write(html);
+      w.document.close();
+    },
+    htmlEsc: function (s) {
+      return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    },
+    /* ---------- 勾选与批量操作 ---------- */
+    onSelect: function (val) { this.selected = val; },
+    clearSelect: function () {
+      this.selected = [];
+      if (this.$refs.tbl) { this.$refs.tbl.clearSelection(); }
+    },
+    /** 已提交/已取消的单不允许勾选（只能查看） */
+    canSelect: function (row) { return row.state === 10 || row.state === 20; },
+    /** 串行调用单条接口，聚合成功/失败结果 */
+    batchCall: function (rows, url, label, extra) {
+      var vm = this, ok = 0, fail = [];
+      var chain = Promise.resolve();
+      rows.forEach(function (r) {
+        chain = chain.then(function () {
+          var body = { id: r.id };
+          if (extra) { Object.keys(extra).forEach(function (k) { body[k] = extra[k]; }); }
+          return fetch(API_BASE + url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: token },
+            body: JSON.stringify(body)
+          })
+            .then(function (x) { return x.json(); })
+            .then(function (j) {
+              if (j && j.code === 0) { ok++; }
+              else { fail.push(r.order_no + '：' + ((j && j.msg) || '失败')); }
+            })
+            .catch(function () { fail.push(r.order_no + '：网络异常'); });
+        });
+      });
+      return chain.then(function () {
+        if (fail.length) {
+          vm.$alert(fail.slice(0, 8).join('<br>') + (fail.length > 8 ? '<br>…' : ''),
+            label + '完成 ' + ok + ' 张，失败 ' + fail.length + ' 张',
+            { dangerouslyUseHTMLString: true, type: 'warning' });
+        } else {
+          vm.$message.success('已' + label + ' ' + ok + ' 张');
+        }
+        vm.load();
+      });
+    },
+    bulkSubmit: function () {
+      var vm = this;
+      var rows = this.selected.filter(function (r) { return r.state === 10; });
+      if (!rows.length) { vm.$message.warning('选中的单据里没有草稿，无法提交'); return; }
+      vm.$confirm('确定提交选中的 ' + rows.length + ' 张草稿吗？提交后进入仓库确认流程。', '批量提交', { type: 'info' })
+        .then(function () { return vm.batchCall(rows, '/inbound/submit', '提交'); })
+        .catch(function () {});
+    },
+    bulkRemove: function () {
+      var vm = this;
+      var rows = this.selected.filter(function (r) { return r.state === 10; });
+      if (!rows.length) { vm.$message.warning('只有草稿可以删除'); return; }
+      vm.$confirm('确定删除选中的 ' + rows.length + ' 张草稿吗？删除后不可恢复。', '批量删除', { type: 'warning' })
+        .then(function () { return vm.batchCall(rows, '/inbound/delete', '删除'); })
+        .catch(function () {});
+    },
+    submit: function (row) {
+      var vm = this;
+      vm.$confirm('提交后单据进入仓库确认流程，提交前请核对明细与数量。确定提交「' + row.order_no + '」吗？', '提交入库单', { type: 'info' })
+        .then(function () {
+          return fetch(API_BASE + '/inbound/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: token },
+            body: JSON.stringify({ id: row.id })
+          }).then(function (r) { return r.json(); });
+        })
+        .then(function (j) {
+          if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else if (j) { vm.$message.error(j.msg || '提交失败'); }
+        })
+        .catch(function () {});
+    },
+    cancel: function (row) {
+      var vm = this;
+      vm.$prompt('填写取消原因（可空）', '取消入库单「' + row.order_no + '」', { inputPlaceholder: '选填' })
+        .then(function (res) {
+          return fetch(API_BASE + '/inbound/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: token },
+            body: JSON.stringify({ id: row.id, reason: res.value || '' })
+          }).then(function (r) { return r.json(); });
+        })
+        .then(function (j) {
+          if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else if (j) { vm.$message.error(j.msg || '取消失败'); }
+        })
+        .catch(function () {});
+    },
+    remove: function (row) {
+      var vm = this;
+      vm.$confirm('确定删除草稿「' + row.order_no + '」吗？删除后不可恢复。', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API_BASE + '/inbound/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: token },
+            body: JSON.stringify({ id: row.id })
+          }).then(function (r) { return r.json(); });
+        })
+        .then(function (j) {
+          if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else if (j) { vm.$message.error(j.msg || '删除失败'); }
+        })
+        .catch(function () {});
+    },
+    logout: function () {
+      this.$confirm('确定退出登录吗？', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API_BASE + '/auth/logout', { method: 'POST', headers: { token: token } });
+        })
+        .catch(function () {})
+        .finally(function () {
+          localStorage.removeItem('hw_token');
+          localStorage.removeItem('hw_user');
+          location.href = 'login.html';
+        });
+    }
+  }
+});
+</script>
+</body>
+</html>

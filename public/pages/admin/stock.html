@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>库存查询 - 运营后台</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+[v-cloak] { display: none !important; }
+.wrap { max-width: 720px; margin: 60px auto; text-align: center; }
+.wrap .big { font-family: var(--font-display); font-size: 46px; font-weight: 700; color: var(--ink, #2E4B3F); }
+.wrap .sub { font-size: 14px; color: var(--text-muted, #6E6A61); margin-top: 12px; line-height: 1.9; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <div class="wrap">
+    <div class="big">库存管理</div>
+    <p class="sub">规划中：库位（库区含中转 / 代发分区）→ 收货上架 → 库存五维模型<br>（货主 × 仓库 × SKU × 库位 × 状态）与库存流水</p>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script>
+new Vue({ el: '#app', data: {} });
+</script>
+</body>
+</html>

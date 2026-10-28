@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品管理 - 运营后台</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="../assets/portal.css">
+<style>
+[v-cloak] { display: none !important; }
+html, body { height: 100%; }
+body { padding: 4px; overflow: hidden; }
+#app { height: 100%; display: flex; flex-direction: column; }
+.toolbar { flex: none; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.toolbar .spacer { flex: 1; }
+.batch-bar { flex: none; }
+.tbl { flex: 1; min-height: 260px; display: flex; flex-direction: column;
+  background: #fff; border: 1px solid rgba(42,38,32,.1); border-radius: 10px; padding: 6px 14px 14px; }
+.tbl-body { flex: 1; min-height: 0; }
+.pager { flex: none; margin-top: 12px; text-align: right; }
+
+.sku-table .el-table__header th { background: var(--paper-2, #F5F2EC) !important; color: #2E4B3F;
+  font-weight: 600; font-size: 12px; letter-spacing: .06em; }
+.sku-table .el-table__body td { font-size: 13px; }
+.sku-table .el-table__row:hover > td { background: rgba(46,75,63,.035) !important; }
+
+.tbl-pic { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; background: #F5F2EC;
+  display: grid; place-items: center; border: 1px solid rgba(42,38,32,.1); }
+.tbl-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tbl-pic .ph { font-weight: 700; font-size: 16px; color: rgba(46,75,63,.2); }
+.tbl-code { font-weight: 700; font-size: 13px; color: #2E4B3F; white-space: nowrap; }
+.tbl-barcode { font-size: 11px; color: #8a8577; letter-spacing: .06em; margin-top: 2px; white-space: nowrap; }
+.tbl-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbl-en { font-size: 11px; color: #8a8577; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-tag { display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px; padding: 2px 9px; border-radius: 999px; background: rgba(46,75,63,.07); color: #2E4B3F; }
+.co-tag b { font-weight: 600; }
+.co-code { display: block; font-size: 11px; color: #8a8577; font-variant-numeric: tabular-nums; }
+.tbl-num { font-size: 12px; color: #6E6A61; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl-num b { color: #4A463D; font-weight: 500; }
+.tbl-wh { font-size: 12px; color: #3C6151; background: rgba(46,75,63,.06); border-radius: 6px;
+  padding: 3px 8px; display: inline-block; white-space: nowrap; }
+.tbl-none { font-size: 12px; color: #B0AA9C; }
+.tbl-attr { font-size: 12px; color: #6E6A61; }
+.tbl-price { color: #A65E3F; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tbl-date { font-size: 12px; color: #4A463D; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.st { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px; }
+.st.on { background: rgba(46,75,63,.1); color: #2E4B3F; }
+.st.off { background: rgba(180,83,58,.12); color: #B4533A; }
+
+.op button, .batch-bar button.mini { background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  font-size: 12px; color: #6E6A61; font-family: inherit; padding: 3px 8px; }
+.op button:hover { color: #2E4B3F; border-color: rgba(42,38,32,.1); background: #F5F2EC; }
+.op button.warn:hover { color: #B4533A; border-color: rgba(180,83,58,.3); }
+
+.batch-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 12px;
+  background: rgba(217,160,91,.1); border: 1px solid rgba(166,94,63,.22); border-radius: 8px;
+  font-size: 13px; color: #3C6151; }
+.batch-bar .cnt { font-weight: 700; color: #A65E3F; }
+.batch-bar .flex1 { flex: 1; }
+
+/* 弹窗 */
+.img-uploader .el-upload { width: 96px; height: 96px; border: 1px dashed rgba(46,75,63,.4); border-radius: 8px;
+  background: #F5F2EC; cursor: pointer; display: grid; place-items: center; }
+.img-uploader .el-upload:hover { border-color: #A65E3F; background: rgba(217,160,91,.08); }
+.img-up-icon { font-size: 26px; color: #6E6A61; }
+.img-item-main { position: relative; width: 96px; height: 96px; border-radius: 8px; overflow: hidden;
+  border: 1px solid rgba(42,38,32,.1); }
+.img-item-main img { width: 100%; height: 100%; object-fit: cover; }
+.img-item-main .rm { position: absolute; right: 2px; top: 2px; width: 20px; height: 20px; border-radius: 50%;
+  border: none; cursor: pointer; background: rgba(15,30,20,.6); color: #fff; font-size: 12px; line-height: 1; }
+.attr-switches { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 4px 0 2px; }
+.attr-switches .asw { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.lock-hint { background: rgba(217,160,91,.1); border: 1px solid rgba(166,94,63,.22); border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 18px; font-size: 12.5px; line-height: 1.7; color: #3C6151; }
+</style>
+</head>
+<body class="portal">
+<div id="app" v-cloak>
+  <div class="toolbar">
+    <el-select v-model="customerId" placeholder="所属公司" clearable filterable style="width:220px" @change="search">
+      <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.code + ' · ' + c.name"></el-option>
+    </el-select>
+    <el-radio-group v-model="statusFilter" size="small" @change="search">
+      <el-radio-button label="">全部 {{ stats.all }}</el-radio-button>
+      <el-radio-button label="1">启用 {{ stats.on }}</el-radio-button>
+      <el-radio-button label="0">停用 {{ stats.off }}</el-radio-button>
+    </el-radio-group>
+    <el-input v-model.trim="keyword" placeholder="SKU 编码 / 品名 / 条码" clearable
+              style="width:220px" @keyup.enter.native="search" @clear="search"></el-input>
+    <el-date-picker v-model="dateRange" type="daterange" unlink-panels value-format="yyyy-MM-dd"
+                    range-separator="至" start-placeholder="创建起始日" end-placeholder="创建截止日"
+                    clearable style="width:280px" @change="search"></el-date-picker>
+    <el-button icon="el-icon-search" @click="search">查询</el-button>
+    <el-button icon="el-icon-refresh" @click="resetFilter">重置</el-button>
+    <div class="spacer"></div>
+    <button class="btn-primary" type="button" @click="openDialog()" v-if="can('product:create')">+ 新增 SKU</button>
+  </div>
+
+  <!-- 批量操作条 -->
+  <div class="batch-bar" v-if="selected.length > 0">
+    <span>已选 <span class="cnt">{{ selected.length }}</span> 项</span>
+    <el-button size="mini" v-if="can('product:status')" @click="batchStatus(1)">批量启用</el-button>
+    <el-button size="mini" v-if="can('product:status')" @click="batchStatus(0)">批量停用</el-button>
+    <el-button size="mini" type="danger" plain v-if="can('product:delete')" @click="batchDelete">批量删除</el-button>
+    <el-button size="mini" v-if="can('product:print')" @click="printLabels(selected)">打印标签</el-button>
+    <div class="flex1"></div>
+    <el-button size="mini" @click="clearSelection">取消选择</el-button>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-body">
+    <el-table ref="skuTable" class="sku-table" :data="rows" v-loading="loading" height="100%"
+              @selection-change="onSelectionChange" empty-text="还没有 SKU，点右上角「新增 SKU」建档">
+      <el-table-column type="selection" width="44" align="center"></el-table-column>
+      <el-table-column label="图片" width="68" align="center">
+        <template slot-scope="s">
+          <el-image v-if="s.row.image" class="tbl-pic" :src="s.row.image"
+                    :preview-src-list="[s.row.image]" fit="cover">
+            <div slot="error" class="tbl-pic"><span class="ph">仓</span></div>
+          </el-image>
+          <div v-else class="tbl-pic"><span class="ph">仓</span></div>
+        </template>
+      </el-table-column>
+      <el-table-column label="所属公司" min-width="190">
+        <template slot-scope="s">
+          <span class="co-tag"><b>{{ s.row.company_name }}</b></span>
+          <span class="co-code">{{ s.row.company_code }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="SKU 编码 / 条码" min-width="200">
+        <template slot-scope="s">
+          <div class="tbl-code">{{ s.row.sku_code }}</div>
+          <div class="tbl-barcode">{{ s.row.barcode }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="品名" min-width="200">
+        <template slot-scope="s">
+          <div class="tbl-name">{{ s.row.name_cn }}<span v-if="s.row.color" style="color:#6E6A61;font-size:12px"> · {{ s.row.color }}</span></div>
+          <div class="tbl-en">{{ s.row.name_en }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="客户申报" min-width="170">
+        <template slot-scope="s">
+          <div class="tbl-num"><b>{{ s.row.weight }}</b> kg</div>
+          <div class="tbl-num"><b>{{ s.row.length }}×{{ s.row.width }}×{{ s.row.height }}</b> cm</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="仓库实测" min-width="180">
+        <template slot-scope="s">
+          <span v-if="s.row.wh_weight" class="tbl-wh">
+            {{ s.row.wh_weight }} kg · {{ s.row.wh_length }}×{{ s.row.wh_width }}×{{ s.row.wh_height }} cm
+          </span>
+          <span v-else class="tbl-none">未实测</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="属性" width="110">
+        <template slot-scope="s">
+          <span v-if="attrLabels(s.row).length" class="tbl-attr">{{ attrLabels(s.row).join(' / ') }}</span>
+          <span v-else class="tbl-none">—</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="申报价值" width="90" align="right">
+        <template slot-scope="s"><span class="tbl-price">${{ s.row.declare_value }}</span></template>
+      </el-table-column>
+      <el-table-column label="创建时间" width="130" align="center">
+        <template slot-scope="s"><span class="tbl-date">{{ fmtDate(s.row.create_time) }} {{ fmtClock(s.row.create_time) }}</span></template>
+      </el-table-column>
+      <el-table-column label="状态" width="76" align="center">
+        <template slot-scope="s">
+          <span class="st" :class="s.row.status === 1 ? 'on' : 'off'">{{ s.row.status === 1 ? '启用' : '停用' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="200" fixed="right">
+        <template slot-scope="s">
+          <div class="op">
+            <button type="button" v-if="can('product:update')" @click="openDialog(s.row)">编辑</button>
+            <button type="button" v-if="can('product:print')" @click="printLabels([s.row])">打印</button>
+            <button type="button" v-if="can('product:status')" @click="toggleStatus(s.row)">{{ s.row.status === 1 ? '停用' : '启用' }}</button>
+            <button type="button" class="warn" v-if="can('product:delete')" @click="remove(s.row)">删除</button>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
+    </div>
+    <div class="pager">
+      <el-pagination background layout="total, prev, pager, next, sizes" :total="total"
+                     :current-page.sync="page" :page-size.sync="limit" :page-sizes="[20, 50, 100]"
+                     @current-change="load" @size-change="load"></el-pagination>
+    </div>
+  </div>
+
+  <!-- 新增/编辑弹窗 -->
+  <el-dialog :title="form.id ? '编辑 SKU' : '新增 SKU'" :visible.sync="dlg" width="760px" top="6vh">
+    <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+      <div v-if="form.id" class="lock-hint">
+        编辑模式：除「SKU 编码」「所属公司」外均可修改；仓库实测留空 = 未实测，四项填全自动记录实测时间。
+      </div>
+      <div class="form-row">
+        <el-form-item label="所属公司" prop="customer_id">
+          <el-select v-model="form.customer_id" filterable placeholder="选择货主公司"
+                     style="width:100%" :disabled="!!form.id">
+            <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.code + ' · ' + c.name"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="SKU 编码" prop="sku_code">
+          <el-input v-model.trim="form.sku_code" :disabled="!!form.id"
+                    placeholder="字母数字-_." maxlength="64"></el-input>
+        </el-form-item>
+      </div>
+      <div class="form-row">
+        <el-form-item label="中文品名" prop="name_cn">
+          <el-input v-model.trim="form.name_cn" maxlength="128"></el-input>
+        </el-form-item>
+        <el-form-item label="英文品名" prop="name_en">
+          <el-input v-model.trim="form.name_en" maxlength="128"></el-input>
+        </el-form-item>
+      </div>
+      <div class="form-row">
+        <el-form-item label="颜色（选填）" prop="color">
+          <el-input v-model.trim="form.color" maxlength="64"></el-input>
+        </el-form-item>
+        <el-form-item label="海关编码" prop="hs_code">
+          <el-input v-model.trim="form.hs_code" placeholder="选填" maxlength="32"></el-input>
+        </el-form-item>
+      </div>
+
+      <el-form-item label="商品图片">
+        <el-upload v-if="!form.image" class="img-uploader"
+                   :action="API + '/upload/image'" name="file"
+                   :headers="{ token: TOKEN }" :show-file-list="false"
+                   accept="image/jpeg,image/png,image/webp"
+                   :before-upload="beforeUpload" :on-success="onUploadSuccess" :on-error="onUploadError">
+          <i class="el-icon-plus img-up-icon"></i>
+        </el-upload>
+        <div v-else class="img-item-main">
+          <img :src="form.image" alt="">
+          <button type="button" class="rm" @click="form.image = ''" title="移除图片">×</button>
+        </div>
+        <div style="font-size:12px;color:#6E6A61;margin-top:8px">jpg / png / webp，不超过 5MB</div>
+      </el-form-item>
+
+      <div class="form-row">
+        <el-form-item label="重量 kg" prop="weight">
+          <el-input-number v-model="form.weight" :min="0.001" :precision="3" :controls="false" style="width:100%"></el-input-number>
+        </el-form-item>
+        <el-form-item label="申报价值 $" prop="declare_value">
+          <el-input-number v-model="form.declare_value" :min="0" :precision="2" :controls="false" style="width:100%"></el-input-number>
+        </el-form-item>
+      </div>
+      <div class="form-row form-row-3">
+        <el-form-item label="长 cm" prop="length">
+          <el-input-number v-model="form.length" :min="0.01" :precision="2" :controls="false" style="width:100%"></el-input-number>
+        </el-form-item>
+        <el-form-item label="宽 cm" prop="width">
+          <el-input-number v-model="form.width" :min="0.01" :precision="2" :controls="false" style="width:100%"></el-input-number>
+        </el-form-item>
+        <el-form-item label="高 cm" prop="height">
+          <el-input-number v-model="form.height" :min="0.01" :precision="2" :controls="false" style="width:100%"></el-input-number>
+        </el-form-item>
+      </div>
+      <template v-if="form.id">
+        <div class="form-row form-row-3">
+          <el-form-item label="实测重量 kg">
+            <el-input-number v-model="form.wh_weight" :min="0.001" :precision="3" :controls="false" placeholder="未实测" style="width:100%"></el-input-number>
+          </el-form-item>
+          <el-form-item label="实测长 cm">
+            <el-input-number v-model="form.wh_length" :min="0.01" :precision="2" :controls="false" placeholder="未实测" style="width:100%"></el-input-number>
+          </el-form-item>
+          <el-form-item label="实测宽 cm">
+            <el-input-number v-model="form.wh_width" :min="0.01" :precision="2" :controls="false" placeholder="未实测" style="width:100%"></el-input-number>
+          </el-form-item>
+        </div>
+        <div class="form-row form-row-3">
+          <el-form-item label="实测高 cm">
+            <el-input-number v-model="form.wh_height" :min="0.01" :precision="2" :controls="false" placeholder="未实测" style="width:100%"></el-input-number>
+          </el-form-item>
+        </div>
+      </template>
+      <el-form-item label="中文描述">
+        <el-input v-model.trim="form.desc_cn" type="textarea" :rows="2" maxlength="2000" placeholder="选填"></el-input>
+      </el-form-item>
+      <el-form-item label="英文描述">
+        <el-input v-model.trim="form.desc_en" type="textarea" :rows="2" maxlength="2000" placeholder="选填"></el-input>
+      </el-form-item>
+      <el-form-item label="规格属性">
+        <div class="attr-switches">
+          <label class="asw" v-for="a in attrDefs" :key="a.key">
+            <el-switch v-model="form.attrs[a.key]" active-color="#2E4B3F"></el-switch>
+            {{ a.label }}
+          </label>
+        </div>
+      </el-form-item>
+    </el-form>
+    <div slot="footer">
+      <el-button @click="dlg = false">取 消</el-button>
+      <button class="btn-primary" type="button" :disabled="saving" @click="submit">保 存</button>
+    </div>
+  </el-dialog>
+
+  <!-- 打印设置弹窗 -->
+  <el-dialog title="打印 SKU 标签" :visible.sync="printDlg" width="420px" top="12vh">
+    <el-form label-width="90px">
+      <el-form-item label="标签尺寸">
+        <el-radio-group v-model="printSize">
+          <el-radio label="1">60 × 40 mm（热敏标准）</el-radio>
+          <el-radio label="2">100 × 50 mm</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item label="打印份数">
+        <el-input-number v-model="printNums" :min="1" :max="100" :precision="0" style="width:140px"></el-input-number>
+        <span style="font-size:12px;color:#6E6A61;margin-left:10px">1 - 100 张</span>
+      </el-form-item>
+      <el-form-item label="产地标识">
+        <el-switch v-model="printMadeIn" active-color="#2E4B3F"></el-switch>
+        <span style="font-size:12px;color:#6E6A61;margin-left:10px">开启后印「Made in China」</span>
+      </el-form-item>
+      <el-form-item label="已选 SKU">
+        <span style="font-size:13px;font-weight:600">{{ printIds.length }} 个</span>
+        <span style="font-size:12px;color:#6E6A61;margin-left:8px">{{ printNames.slice(0,3).join('、') }}{{ printNames.length > 3 ? ' 等' : '' }}</span>
+      </el-form-item>
+    </el-form>
+    <div slot="footer">
+      <el-button @click="printDlg = false">取 消</el-button>
+      <button class="btn-primary" type="button" :disabled="printing" @click="confirmPrint">生成 PDF</button>
+    </div>
+  </el-dialog>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+<script>
+var API = 'http://127.0.0.1:8088/admin';
+var TOKEN = localStorage.getItem('hw_admin_token') || '';
+if (!TOKEN) { parent.location.href = 'login.html'; }
+
+var ATTR_DEFS = [
+  { key: 'battery',  label: '带电' },
+  { key: 'liquid',   label: '液体' },
+  { key: 'powder',   label: '粉末' },
+  { key: 'magnetic', label: '磁性' },
+  { key: 'fragile',  label: '易碎' }
+];
+
+function emptyAttrs() {
+  var o = {};
+  ATTR_DEFS.forEach(function (d) { o[d.key] = false; });
+  return o;
+}
+function emptySku() {
+  return {
+    id: 0, customer_id: null, sku_code: '', name_cn: '', name_en: '', color: '',
+    desc_cn: '', desc_en: '', weight: null, length: null, width: null, height: null,
+    declare_value: null, hs_code: '', image: '', attrs: emptyAttrs(),
+    wh_weight: null, wh_length: null, wh_width: null, wh_height: null
+  };
+}
+
+new Vue({
+  el: '#app',
+  data: {
+    API: API, TOKEN: TOKEN,
+    perms: JSON.parse(localStorage.getItem('hw_admin_perms') || '["*"]'),
+    attrDefs: ATTR_DEFS,
+    rows: [], total: 0, page: 1, limit: 20, loading: false,
+    customers: [], customerId: null, statusFilter: '', keyword: '', dateRange: [],
+    stats: { all: 0, on: 0, off: 0 },
+    selected: [],
+    dlg: false, saving: false, printing: false, form: emptySku(),
+    printDlg: false, printIds: [], printNames: [], printSize: '1', printNums: 1, printMadeIn: true,
+    rules: {
+      customer_id: [{ required: true, message: '请选择所属公司', trigger: 'change' }],
+      sku_code: [
+        { required: true, message: '请填写 SKU 编码', trigger: 'blur' },
+        { pattern: /^[A-Za-z0-9_\-.]+$/, message: '仅限字母、数字、- _ .', trigger: 'blur' }
+      ],
+      name_cn: [{ required: true, message: '请填写中文品名', trigger: 'blur' }],
+      name_en: [{ required: true, message: '请填写英文品名', trigger: 'blur' }],
+      weight: [{ required: true, message: '请填写重量', trigger: 'blur' }],
+      length: [{ required: true, message: '请填写长度', trigger: 'blur' }],
+      width:  [{ required: true, message: '请填写宽度', trigger: 'blur' }],
+      height: [{ required: true, message: '请填写高度', trigger: 'blur' }],
+      declare_value: [{ required: true, message: '请填写申报价值', trigger: 'blur' }]
+    }
+  },
+  created: function () {
+    this.loadCustomers();
+    this.load();
+  },
+  methods: {
+    can: function (k) {
+      return this.perms.indexOf('*') >= 0 || this.perms.indexOf(k) >= 0;
+    },
+    loadCustomers: function () {
+      var vm = this;
+      fetch(API + '/product/customers', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0) { vm.customers = j.data; } })
+        .catch(function () {});
+    },
+    load: function () {
+      var vm = this;
+      vm.loading = true;
+      vm.loadStats();
+      var qs = new URLSearchParams({
+        page: vm.page, limit: vm.limit,
+        keyword: vm.keyword, status: vm.statusFilter || '',
+        customer_id: vm.customerId || '',
+        start_time: (vm.dateRange && vm.dateRange[0]) || '',
+        end_time: (vm.dateRange && vm.dateRange[1]) || ''
+      });
+      fetch(API + '/product/list?' + qs, { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) {
+            vm.rows = j.data.map(function (r) { r.image = r.image || ''; r.attrs = r.attrs || {}; return r; });
+            vm.total = j.count;
+          } else if (j.code === 401) {
+            parent.location.href = 'login.html';
+          } else {
+            vm.$message.error(j.msg || '加载失败');
+          }
+        })
+        .catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.loading = false; });
+    },
+    loadStats: function () {
+      var vm = this;
+      fetch(API + '/product/stats', { headers: { token: TOKEN } })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.code === 0 && j.data) { vm.stats = j.data; } })
+        .catch(function () {});
+    },
+    search: function () { this.page = 1; this.load(); },
+    resetFilter: function () {
+      this.customerId = null; this.statusFilter = ''; this.keyword = '';
+      this.dateRange = []; this.page = 1; this.load();
+    },
+    onSelectionChange: function (sel) { this.selected = sel; },
+    clearSelection: function () { this.$refs.skuTable.clearSelection(); },
+    attrLabels: function (row) {
+      return ATTR_DEFS.filter(function (d) { return row.attrs && row.attrs[d.key]; })
+                      .map(function (d) { return d.label; });
+    },
+    _fmt: function (v, part) {
+      if (!v) { return part === 'date' ? '—' : ''; }
+      var s = String(v);
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+      if (m) {
+        return part === 'date' ? m[1] + '-' + m[2] + '-' + m[3]
+          : (m[4] ? m[4] + ':' + m[5] : '');
+      }
+      var n = Number(s);
+      var d = new Date(n * 1000);
+      if (isNaN(n) || isNaN(d.getTime())) { return part === 'date' ? '—' : ''; }
+      var p = function (x) { return x < 10 ? '0' + x : '' + x; };
+      return part === 'date'
+        ? d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+        : p(d.getHours()) + ':' + p(d.getMinutes());
+    },
+    fmtDate: function (v) { return this._fmt(v, 'date'); },
+    fmtClock: function (v) { return this._fmt(v, 'time'); },
+    openDialog: function (row) {
+      var base = emptySku();
+      if (row) {
+        var copy = JSON.parse(JSON.stringify(row));
+        Object.keys(base).forEach(function (k) {
+          if (copy[k] !== undefined && copy[k] !== null) { base[k] = copy[k]; }
+        });
+        base.attrs = Object.assign(emptyAttrs(), base.attrs || {});
+      }
+      this.form = base;
+      this.dlg = true;
+      this.$nextTick(function () {
+        if (this.$refs.form) { this.$refs.form.clearValidate(); }
+      }.bind(this));
+    },
+    beforeUpload: function (file) {
+      var okType = ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) !== -1;
+      if (!okType) { this.$message.error('仅支持 jpg / png / webp 格式'); return false; }
+      if (file.size > 5 * 1024 * 1024) { this.$message.error('图片不能超过 5MB'); return false; }
+      return true;
+    },
+    onUploadSuccess: function (res) {
+      if (res.code === 0 && res.data && res.data.url) { this.form.image = res.data.url; }
+      else { this.$message.error(res.msg || '上传失败'); }
+    },
+    onUploadError: function () { this.$message.error('上传失败，请重试'); },
+    submit: function () {
+      var vm = this;
+      this.$refs.form.validate(function (valid) {
+        if (!valid) { return; }
+        if (!vm.form.image) { vm.$message.error('请上传商品图片'); return; }
+        vm.saving = true;
+        var url = vm.form.id ? '/product/update' : '/product/create';
+        var body = JSON.parse(JSON.stringify(vm.form));
+        if (!body.id) { delete body.id; }
+        fetch(API + url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', token: TOKEN },
+          body: JSON.stringify(body)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.code === 0) {
+              vm.$message.success(j.msg + (j.data && j.data.barcode ? '，条码 ' + j.data.barcode : ''));
+              vm.dlg = false;
+              vm.load();
+            } else {
+              vm.$message.error(j.msg || '保存失败');
+            }
+          })
+          .catch(function () { vm.$message.error('网络错误'); })
+          .finally(function () { vm.saving = false; });
+      });
+    },
+    toggleStatus: function (row) {
+      var vm = this;
+      fetch(API + '/product/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token: TOKEN },
+        body: JSON.stringify({ id: row.id, status: row.status === 1 ? 0 : 1 })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else { vm.$message.error(j.msg || '操作失败'); }
+        });
+    },
+    remove: function (row) {
+      var vm = this;
+      vm.$confirm('确定删除 SKU「' + row.sku_code + '」吗？', '提示', { type: 'warning' })
+        .then(function () {
+          return fetch(API + '/product/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', token: TOKEN },
+            body: JSON.stringify({ id: row.id })
+          });
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.code === 0) { vm.$message.success(j.msg); vm.load(); }
+          else if (j) { vm.$message.error(j.msg || '删除失败'); }
+        })
+        .catch(function () {});
+    },
+    batchStatus: function (state) {
+      var vm = this, label = state === 1 ? '启用' : '停用';
+      var ids = this.selected.map(function (r) { return r.id; });
+      vm.$confirm('确定批量' + label + '选中的 ' + ids.length + ' 个 SKU 吗？', '提示', { type: 'warning' })
+        .then(function () {
+          var ok = 0, fail = 0;
+          var chain = Promise.resolve();
+          ids.forEach(function (id) {
+            chain = chain.then(function () {
+              return fetch(API + '/product/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', token: TOKEN },
+                body: JSON.stringify({ id: id, status: state })
+              }).then(function (r) { return r.json(); }).then(function (j) { j.code === 0 ? ok++ : fail++; });
+            });
+          });
+          return chain.then(function () {
+            vm.$message.success('批量' + label + '完成：成功 ' + ok + (fail ? '，失败 ' + fail : ''));
+            vm.clearSelection();
+            vm.load();
+          });
+        })
+        .catch(function () {});
+    },
+    batchDelete: function () {
+      var vm = this;
+      var ids = this.selected.map(function (r) { return r.id; });
+      vm.$confirm('确定删除选中的 ' + ids.length + ' 个 SKU 吗？删除后不可恢复。', '警告', { type: 'warning' })
+        .then(function () {
+          var ok = 0, fail = 0;
+          var chain = Promise.resolve();
+          ids.forEach(function (id) {
+            chain = chain.then(function () {
+              return fetch(API + '/product/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', token: TOKEN },
+                body: JSON.stringify({ id: id })
+              }).then(function (r) { return r.json(); }).then(function (j) { j.code === 0 ? ok++ : fail++; });
+            });
+          });
+          return chain.then(function () {
+            vm.$message.success('批量删除完成：成功 ' + ok + (fail ? '，失败 ' + fail : ''));
+            vm.clearSelection();
+            vm.load();
+          });
+        })
+        .catch(function () {});
+    },
+    printLabels: function (rows) {
+      var vm = this;
+      var list = (rows || []).filter(function (r) { return r && r.id; });
+      if (list.length === 0) { vm.$message.warning('请先勾选要打印的 SKU'); return; }
+      // 同公司校验提示（后端强校验兜底）
+      var cos = {};
+      list.forEach(function (r) { cos[r.customer_id] = r.company_name || ''; });
+      if (Object.keys(cos).length > 1) {
+        vm.$message.warning('一次只能打印同一家公司的标签，请按公司分别勾选');
+        return;
+      }
+      vm.printIds = list.map(function (r) { return r.id; });
+      vm.printNames = list.map(function (r) { return r.sku_code; });
+      vm.printDlg = true;
+    },
+    confirmPrint: function () {
+      var vm = this;
+      if (vm.printing) { return; }
+      vm.printing = true;
+      fetch(API + '/product/print-labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token: TOKEN },
+        body: JSON.stringify({
+          ids: vm.printIds, nums: Math.min(100, Math.max(1, parseInt(vm.printNums, 10) || 1)),
+          print_type: vm.printSize, made_in_china: vm.printMadeIn ? 1 : 0
+        })
+      }).then(function (r) { return r.blob(); }).then(function (blob) {
+        if (blob.type.indexOf('json') > -1) {
+          return blob.text().then(function (t) {
+            var j = {};
+            try { j = JSON.parse(t); } catch (e) {}
+            vm.$message.error(j.msg || '生成标签失败');
+          });
+        }
+        var url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        vm.printDlg = false;
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      }).catch(function () { vm.$message.error('网络错误'); })
+        .finally(function () { vm.printing = false; });
+    }
+  }
+});
+</script>
+</body>
+</html>
