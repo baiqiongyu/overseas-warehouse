@@ -544,13 +544,13 @@
         <el-table ref="tbl" class="inb-table" :data="rows" v-loading="loading"
                   @selection-change="onSelect"
                   empty-text="还没有入库单，点右上角「新建入库单」开始第一批入仓">
-          <el-table-column type="selection" width="38" align="center" :selectable="canSelect"></el-table-column>
-          <el-table-column label="入库单号" width="146">
+          <el-table-column type="selection" width="42" align="center" :selectable="canSelect"></el-table-column>
+          <el-table-column label="入库单号" width="152">
             <template slot-scope="s">
               <div class="inb-no">{{ s.row.order_no }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="客户单号" width="92">
+          <el-table-column label="客户单号" width="168">
             <template slot-scope="s">
               <el-tooltip v-if="s.row.ref_no" :content="s.row.ref_no" placement="top"
                           popper-class="inb-tip-popper" :open-delay="250">
@@ -559,7 +559,7 @@
               <span class="inb-none" v-else>—</span>
             </template>
           </el-table-column>
-          <el-table-column label="目标仓库" width="94">
+          <el-table-column label="目标仓库" width="132">
             <template slot-scope="s">
               <el-tooltip :content="s.row.warehouse_name + '（' + s.row.warehouse_code + '）'" placement="top"
                           popper-class="inb-tip-popper" :open-delay="300">
@@ -567,14 +567,14 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column label="业务线" width="66" align="center">
+          <el-table-column label="业务线" width="76" align="center">
             <template slot-scope="s">
               <span class="biz-tag" :class="s.row.biz_type === 1 ? 'transfer' : 'dropship'">
                 {{ s.row.biz_type === 1 ? '中转' : '代发' }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="到仓形态" width="104">
+          <el-table-column label="到仓形态" width="126">
             <template slot-scope="s">
               <div class="inb-mode">
                 <span class="biz-tag" :class="modeClass(s.row.handling_type)">{{ handlingText(s.row.handling_type) }}</span>
@@ -591,29 +591,29 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="箱数" width="48" align="right">
+          <el-table-column label="箱数" width="66" align="right">
             <template slot-scope="s"><span class="inb-num">{{ s.row.box_count }}</span></template>
           </el-table-column>
-          <el-table-column label="件数" width="54" align="right">
+          <el-table-column label="件数" width="72" align="right">
             <template slot-scope="s"><span class="inb-num">{{ s.row.total_qty }}</span></template>
           </el-table-column>
-          <el-table-column label="SKU" width="46" align="right">
+          <el-table-column label="SKU" width="60" align="right">
             <template slot-scope="s">
               <span class="inb-num" :title="s.row.attachment_count ? '含附件 ' + s.row.attachment_count + ' 个' : null">{{ s.row.sku_kinds }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="预计到仓" width="92">
+          <el-table-column label="预计到仓" width="110">
             <template slot-scope="s"><span class="inb-sum">{{ s.row.expect_time || '—' }}</span></template>
           </el-table-column>
-          <el-table-column label="创建时间" width="108">
+          <el-table-column label="创建时间" width="142">
             <template slot-scope="s"><span class="inb-time" :title="s.row.create_time">{{ (s.row.create_time || '').slice(0, 16) || '—' }}</span></template>
           </el-table-column>
-                    <el-table-column label="状态" width="82" align="center">
+                    <el-table-column label="状态" width="92" align="center">
             <template slot-scope="s">
               <span class="inb-state" :class="'s' + s.row.state">{{ stateText(s.row.state) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="备注" min-width="140">
+          <el-table-column label="备注" min-width="160">
             <template slot-scope="s">
               <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
                           popper-class="inb-remark-tip" :open-delay="150">
