@@ -547,13 +547,7 @@
           <el-table-column type="selection" width="38" align="center" :selectable="canSelect"></el-table-column>
           <el-table-column label="入库单号" width="146">
             <template slot-scope="s">
-              <div class="inb-no-wrap">
-                <span class="inb-no">{{ s.row.order_no }}</span>
-                <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
-                            popper-class="inb-remark-tip" :open-delay="150">
-                  <i class="inb-remk">注</i>
-                </el-tooltip>
-              </div>
+              <div class="inb-no">{{ s.row.order_no }}</div>
             </template>
           </el-table-column>
           <el-table-column label="客户单号" width="92">
@@ -617,6 +611,15 @@
                     <el-table-column label="状态" width="82" align="center">
             <template slot-scope="s">
               <span class="inb-state" :class="'s' + s.row.state">{{ stateText(s.row.state) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="备注" min-width="140">
+            <template slot-scope="s">
+              <el-tooltip v-if="s.row.remark" :content="s.row.remark" placement="top"
+                          popper-class="inb-remark-tip" :open-delay="150">
+                <div class="inb-remark">{{ s.row.remark }}</div>
+              </el-tooltip>
+              <span class="inb-none" v-else>—</span>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="214" fixed="right">
