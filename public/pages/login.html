@@ -3,82 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>登录 - 海外仓系统</title>
-<!-- 字体：衬线展示字 + 黑体正文（jsdelivr fontsource 分包，按需加载） -->
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
-<link rel="stylesheet" href="assets/auth.css">
+<title>登录 · 海外仓系统</title>
+<meta name="theme-color" content="#F5F8FB">
+<link rel="stylesheet" href="assets/vendor/element-ui/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/auth.css?v=5">
 </head>
 <body class="auth-page">
-<div class="grain" aria-hidden="true"></div>
+<div class="bg" aria-hidden="true"></div>
 
-<main class="auth-shell">
-  <!-- 左：品牌叙事区（<960px 隐藏） -->
-  <section class="stage">
-    <header class="stage-top reveal" style="--d:0ms">
-      <span class="logo-mark" aria-hidden="true">仓</span>
-      <span class="logo-name">海外仓系统</span>
-      <span class="logo-en">GLOBAL WAREHOUSE SYSTEM</span>
-    </header>
+<div class="layout">
 
-    <div class="stage-hero">
-      <p class="eyebrow reveal" style="--d:80ms">GLOBAL WAREHOUSE SYSTEM</p>
-      <h1 class="reveal" style="--d:160ms">把全球仓，<br>收进<em>一块屏幕</em>。</h1>
-      <p class="lead reveal" style="--d:260ms">入库、出库、库存与批次——跨境生意里的每一件货，在这里都有迹可循。</p>
-
-      <ul class="features reveal" style="--d:340ms">
-        <li>
-          <span class="no">01</span>
-          <b class="ft">全链路入库</b>
-          <span class="fd">中转、代发、退货三条业务线，预约收货、扫码质检、推荐上架一步到位</span>
-        </li>
-        <li>
-          <span class="no">02</span>
-          <b class="ft">订单式出库</b>
-          <span class="fd">审核冻结库存、波次拣货、复核打包、交接发货，全程节点可追溯</span>
-        </li>
-        <li>
-          <span class="no">03</span>
-          <b class="ft">四态库存分账</b>
-          <span class="fd">可用 / 冻结 / 在途独立核算，FIFO 批次先进先出，盘点盈亏有据可查</span>
-        </li>
-        <li>
-          <span class="no">04</span>
-          <b class="ft">计费与对账</b>
-          <span class="fd">仓储费、操作费自动计费，月度账单与库存日快照一键导出</span>
-        </li>
-      </ul>
-
-      <ul class="stats reveal" style="--d:420ms">
-        <li><b class="num">12<small>+</small></b><span class="lbl">覆盖国家</span></li>
-        <li><b class="num">300<small>+</small></b><span class="lbl">合作货主</span></li>
-        <li><b class="num">99.98<small>%</small></b><span class="lbl">库存准确率</span></li>
-      </ul>
+  <!-- 顶部导航 -->
+  <header class="site-head">
+    <div class="wrap">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round">
+            <path d="M12 2.8 20.2 7.2v9.6L12 21.2 3.8 16.8V7.2L12 2.8Z"/>
+            <path d="M4 7.4 12 11.8l8-4.4M12 11.8v9" opacity=".7"/>
+          </svg>
+        </span>
+        <span class="brand-name">海外仓系统</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#" class="active">货主门户</a>
+        <a href="#">入库管理</a>
+        <a href="#">库存查询</a>
+        <a href="#">帮助文档</a>
+      </nav>
+      <div class="head-right">
+        <a href="#" class="hide-sm">中文 / EN</a>
+        <span class="divider hide-sm"></span>
+        <a href="register.html" class="signup">免费开通</a>
+      </div>
     </div>
+  </header>
 
-    <footer class="stage-foot reveal" style="--d:500ms">
-      <span>© 2026 海外仓系统</span>
-      <span>货主门户 · 跨境仓储一体化管理</span>
-    </footer>
-  </section>
+  <!-- 主区 -->
+  <main class="wrap hero">
 
-  <!-- 右：登录表单区（Vue 挂载点，品牌区为纯静态） -->
-  <section class="pane" id="app">
-    <div class="pane-inner">
-      <header class="pane-top reveal" style="--d:60ms">
-        <span class="logo-mark" aria-hidden="true">仓</span>
-        <span class="logo-name">海外仓系统</span>
-        <span class="logo-en">CUSTOMER PORTAL</span>
-      </header>
+    <!-- 左：文案 -->
+    <section class="copy">
+      <span class="badge reveal" style="--d:0ms"><i></i>跨境仓储一体化管理</span>
+      <h1 class="reveal" style="--d:60ms">把全球仓，<br>收进<em>一块屏幕</em></h1>
+      <p class="lead reveal" style="--d:120ms">入库预约、到仓收货、库位上架、库存查询——跨境生意里的每一件货，进度都在这里。</p>
 
-      <h2 class="reveal" style="--d:120ms">欢迎回来</h2>
-      <p class="pane-sub reveal" style="--d:200ms">登录货主门户，查看您的全球库存</p>
+      <ul class="points reveal" style="--d:180ms">
+        <li>
+          <span class="tick"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 9.5 17 19 7.5"/></svg></span>
+          <div><b>入库全流程在线</b><span class="d">提交预约、仓库审核、扫码收货，一张单跟到底</span></div>
+        </li>
+        <li>
+          <span class="tick"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 9.5 17 19 7.5"/></svg></span>
+          <div><b>库存实时可见</b><span class="d">可用、冻结、在途分账，批次先进先出</span></div>
+        </li>
+        <li>
+          <span class="tick"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 9.5 17 19 7.5"/></svg></span>
+          <div><b>数据按货主隔离</b><span class="d">每个账号只看到自己的库存、单据与账单</span></div>
+        </li>
+      </ul>
+    </section>
 
-      <div class="form-frame reveal" style="--d:280ms">
-        <el-form ref="form" class="auth-form"
+    <!-- 右：登录表单 -->
+    <section class="pane" id="app">
+      <div class="card reveal" style="--d:100ms">
+        <h2>登录货主门户</h2>
+        <p class="sub">使用注册邮箱登录，查看库存与入库进度</p>
+
+        <el-form ref="form" class="auth-form" label-position="top"
                  :model="form" :rules="rules"
                  @submit.native.prevent="submit">
           <el-form-item prop="email" label="邮箱">
@@ -92,19 +84,48 @@
           </el-form-item>
           <el-button class="btn-submit" type="primary" :loading="loading" native-type="submit">登 录</el-button>
         </el-form>
-      </div>
 
-      <div class="trust-line reveal" style="--d:340ms">密码加密存储 · 货主数据严格隔离</div>
-
-      <div class="pane-foot reveal" style="--d:400ms">
-        还没有账号？<a href="register.html">申请开通</a>
+        <div class="trust-line">密码加密存储 · 数据按货主隔离</div>
+        <div class="card-foot">还没有账号？<a href="register.html">申请开通</a></div>
       </div>
+    </section>
+  </main>
+
+  <!-- 能力卡片 -->
+  <section class="wrap features">
+    <div class="feat reveal" style="--d:220ms">
+      <span class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 7.2v9.6L12 21 4 16.8V7.2L12 3Z"/><path d="M4 7.4 12 11.8l8-4.4M12 11.8v9"/></svg></span>
+      <b>入库管理</b>
+      <span>预约到仓、箱明细登记、仓库审核，全程留痕。</span>
+    </div>
+    <div class="feat reveal" style="--d:280ms">
+      <span class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18.5" cy="17" r="2.2"/></svg></span>
+      <b>库存查询</b>
+      <span>按 SKU、批次、库位查看可用与冻结数量。</span>
+    </div>
+    <div class="feat reveal" style="--d:340ms">
+      <span class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5v9L12 21 3 16.5v-9Z" opacity=".55"/><path d="m7.5 12 3 3 6-6"/></svg></span>
+      <b>履约追踪</b>
+      <span>出库审核、拣货打包、交接发货节点可追溯。</span>
     </div>
   </section>
-</main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+  <!-- 页脚 -->
+  <footer class="site-foot">
+    <div class="wrap">
+      <span>© 2026 海外仓系统 · 货主门户</span>
+      <span class="links">
+        <a href="#">服务条款</a>
+        <a href="#">隐私政策</a>
+        <a href="#">联系我们</a>
+      </span>
+    </div>
+  </footer>
+
+</div>
+
+<script src="assets/vendor/vue/vue.min.js"></script>
+<script src="assets/vendor/element-ui/lib/index.js"></script>
 <script>
 const API_BASE = 'http://127.0.0.1:8088/customer';
 
@@ -122,7 +143,6 @@ new Vue({
     }
   },
   created: function () {
-    // 注册成功跳转过来时预填邮箱
     var email = new URLSearchParams(location.search).get('email');
     if (email) { this.form.email = email; }
   },

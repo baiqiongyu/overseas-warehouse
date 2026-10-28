@@ -3,122 +3,142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>注册 - 海外仓系统</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.2.5/500.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css">
-<link rel="stylesheet" href="assets/auth.css">
+<title>申请开通 · 海外仓系统</title>
+<meta name="theme-color" content="#F5F8FB">
+<link rel="stylesheet" href="assets/vendor/element-ui/theme-chalk/index.css">
+<link rel="stylesheet" href="assets/auth.css?v=5">
 </head>
-<body class="auth-page is-register">
-<div class="grain" aria-hidden="true"></div>
+<body class="auth-page">
+<div class="bg" aria-hidden="true"></div>
 
-<main class="auth-shell">
-  <!-- 左：品牌叙事区（与登录页一致，数据行替换为开通流程） -->
-  <section class="stage">
-    <header class="stage-top reveal" style="--d:0ms">
-      <span class="logo-mark" aria-hidden="true">仓</span>
-      <span class="logo-name">海外仓系统</span>
-      <span class="logo-en">GLOBAL WAREHOUSE SYSTEM</span>
-    </header>
+<div class="layout">
 
-    <div class="stage-hero">
-      <p class="eyebrow reveal" style="--d:80ms">OPEN YOUR ACCOUNT</p>
-      <h1 class="reveal" style="--d:160ms">三步开通，<br><em>即刻入库</em>。</h1>
-      <p class="lead reveal" style="--d:260ms">填写企业信息，获取专属货主编码，即可提交入库预约与出库订单。</p>
-
-      <ul class="features features--ticks reveal" style="--d:340ms">
-        <li>
-          <span class="no" aria-hidden="true"></span>
-          <b class="ft">中转 / 代发 / 退货入库</b>
-          <span class="fd">整批到仓、拆包质检、扫码上架</span>
-        </li>
-        <li>
-          <span class="no" aria-hidden="true"></span>
-          <b class="ft">拣货复核发货</b>
-          <span class="fd">波次拣货、复核打包、交接发货</span>
-        </li>
-        <li>
-          <span class="no" aria-hidden="true"></span>
-          <b class="ft">四态库存与批次</b>
-          <span class="fd">可用 / 冻结 / 在途分账，FIFO 先进先出</span>
-        </li>
-        <li>
-          <span class="no" aria-hidden="true"></span>
-          <b class="ft">自动计费对账</b>
-          <span class="fd">仓储操作费自动核算，月度账单导出</span>
-        </li>
-      </ul>
-
-      <ul class="stats reveal" style="--d:420ms">
-        <li><b class="num">01</b><span class="lbl">填写企业信息</span></li>
-        <li><b class="num">02</b><span class="lbl">获取货主编码</span></li>
-        <li><b class="num">03</b><span class="lbl">提交入库预约</span></li>
-      </ul>
+  <header class="site-head">
+    <div class="wrap">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round">
+            <path d="M12 2.8 20.2 7.2v9.6L12 21.2 3.8 16.8V7.2L12 2.8Z"/>
+            <path d="M4 7.4 12 11.8l8-4.4M12 11.8v9" opacity=".7"/>
+          </svg>
+        </span>
+        <span class="brand-name">海外仓系统</span>
+      </div>
+      <nav class="nav-links">
+        <a href="login.html">货主门户</a>
+        <a href="#">入库管理</a>
+        <a href="#">库存查询</a>
+        <a href="#">帮助文档</a>
+      </nav>
+      <div class="head-right">
+        <a href="#" class="hide-sm">中文 / EN</a>
+        <span class="divider hide-sm"></span>
+        <a href="login.html" class="signup">已有账号，登录</a>
+      </div>
     </div>
+  </header>
 
-    <footer class="stage-foot reveal" style="--d:500ms">
-      <span>© 2026 海外仓系统</span>
-      <span>货主门户 · 跨境仓储一体化管理</span>
-    </footer>
-  </section>
+  <main class="wrap hero">
 
-  <!-- 右：注册表单区（Vue 挂载点） -->
-  <section class="pane" id="app">
-    <div class="pane-inner">
-      <header class="pane-top reveal" style="--d:60ms">
-        <span class="logo-mark" aria-hidden="true">仓</span>
-        <span class="logo-name">海外仓系统</span>
-        <span class="logo-en">CUSTOMER PORTAL</span>
-      </header>
+    <section class="copy">
+      <span class="badge reveal" style="--d:0ms"><i></i>开通即用 · 无需部署</span>
+      <h1 class="reveal" style="--d:60ms">三步开通，<br>开始<em>在线管货</em></h1>
+      <p class="lead reveal" style="--d:120ms">填写企业信息，获得专属货主编码，即可提交入库预约与出库订单。</p>
 
-      <h2 class="reveal" style="--d:120ms">创建货主账号</h2>
-      <p class="pane-sub reveal" style="--d:200ms">注册后即可登录，查看库存并下单</p>
+      <ul class="steps reveal" style="--d:180ms">
+        <li>
+          <span class="n">1</span>
+          <div><b>填写企业信息</b><span class="d">公司名称、联系人与登录邮箱，用于建立货主档案</span></div>
+        </li>
+        <li>
+          <span class="n">2</span>
+          <div><b>获得货主编码</b><span class="d">注册即生成唯一编码，作为库存与账单的归属标识</span></div>
+        </li>
+        <li>
+          <span class="n">3</span>
+          <div><b>提交入库预约</b><span class="d">选择仓库与到仓形态，上传装箱明细等待审核</span></div>
+        </li>
+      </ul>
+    </section>
 
-      <div class="form-frame reveal" style="--d:280ms">
-        <el-form ref="form" class="auth-form"
-                 :model="form" :rules="rules" label-position="top"
+    <section class="pane" id="app">
+      <div class="card reveal" style="--d:100ms">
+        <h2>创建货主账号</h2>
+        <p class="sub">注册后即可登录，查看库存并提交入库预约</p>
+
+        <el-form ref="form" class="auth-form is-grid" label-position="top"
+                 :model="form" :rules="rules"
                  @submit.native.prevent="submit">
-          <el-form-item label="公司名称" prop="company_name">
-            <el-input v-model.trim="form.company_name" placeholder="与营业执照一致的公司名称" maxlength="128"></el-input>
+          <el-form-item class="span-2" label="公司名称" prop="company_name">
+            <el-input v-model.trim="form.company_name" placeholder="与营业执照一致" maxlength="128"></el-input>
           </el-form-item>
           <el-form-item label="联系人" prop="contact">
-            <el-input v-model.trim="form.contact" placeholder="主要联系人姓名" maxlength="64"></el-input>
+            <el-input v-model.trim="form.contact" placeholder="主要联系人" maxlength="64"></el-input>
           </el-form-item>
           <el-form-item label="联系电话" prop="phone">
-            <el-input v-model.trim="form.phone" placeholder="用于入库异常、到货通知的联系" maxlength="32"></el-input>
+            <el-input v-model.trim="form.phone" placeholder="到货通知电话" maxlength="32"></el-input>
           </el-form-item>
-          <el-form-item label="登录邮箱" prop="email">
+          <el-form-item class="span-2" label="登录邮箱" prop="email">
             <el-input v-model.trim="form.email" placeholder="name@company.com，注册后用于登录"
                       maxlength="128" @blur="checkEmail"></el-input>
           </el-form-item>
           <el-form-item label="密码" prop="password">
-            <el-input v-model="form.password" type="password" placeholder="8-32 位，须包含字母和数字"
+            <el-input v-model="form.password" type="password" placeholder="8-32 位，含字母和数字"
                       show-password @input="checkStrength"></el-input>
             <div class="strength" v-show="form.password">
-              密码强度：<b :style="{color: strengthColor}">{{ strengthText }}</b>
+              <span class="bars">
+                <i :class="strengthScore >= 1 ? 'on-' + strengthScore : ''"></i>
+                <i :class="strengthScore >= 2 ? 'on-' + strengthScore : ''"></i>
+                <i :class="strengthScore >= 3 ? 'on-' + strengthScore : ''"></i>
+              </span>
+              <b :style="{color: strengthColor}">{{ strengthText }}</b>
             </div>
           </el-form-item>
           <el-form-item label="确认密码" prop="repassword">
             <el-input v-model="form.repassword" type="password" placeholder="再次输入密码"
                       show-password @keyup.enter.native="submit"></el-input>
           </el-form-item>
-          <el-button class="btn-submit" type="primary" :loading="loading" native-type="submit">注 册</el-button>
+          <el-button class="btn-submit span-2" type="primary" :loading="loading" native-type="submit">注 册</el-button>
         </el-form>
-      </div>
 
-      <div class="trust-line reveal" style="--d:340ms">密码加密存储 · 货主数据严格隔离</div>
-
-      <div class="pane-foot reveal" style="--d:400ms">
-        已有账号？<a href="login.html">直接登录</a>
+        <div class="card-foot">已有账号？<a href="login.html">直接登录</a></div>
       </div>
+    </section>
+  </main>
+
+  <section class="wrap features">
+    <div class="feat reveal" style="--d:220ms">
+      <span class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 7.2v9.6L12 21 4 16.8V7.2L12 3Z"/><path d="M4 7.4 12 11.8l8-4.4M12 11.8v9"/></svg></span>
+      <b>中转 / 代发 / 退货</b>
+      <span>三条业务线独立分账，库存互不占用。</span>
+    </div>
+    <div class="feat reveal" style="--d:280ms">
+      <span class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18.5" cy="17" r="2.2"/></svg></span>
+      <b>批次先进先出</b>
+      <span>按批次管理库存，盘点盈亏有据可查。</span>
+    </div>
+    <div class="feat reveal" style="--d:340ms">
+      <span class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12.5 11 15.5 16.5 9"/></svg></span>
+      <b>数据严格隔离</b>
+      <span>货主之间互不可见，权限按角色分配。</span>
     </div>
   </section>
-</main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+  <footer class="site-foot">
+    <div class="wrap">
+      <span>© 2026 海外仓系统 · 货主门户</span>
+      <span class="links">
+        <a href="#">服务条款</a>
+        <a href="#">隐私政策</a>
+        <a href="#">联系我们</a>
+      </span>
+    </div>
+  </footer>
+
+</div>
+
+<script src="assets/vendor/vue/vue.min.js"></script>
+<script src="assets/vendor/element-ui/lib/index.js"></script>
 <script>
 const API_BASE = 'http://127.0.0.1:8088/customer';
 
@@ -177,9 +197,9 @@ new Vue({
       return '强';
     },
     strengthColor: function () {
-      if (this.strengthScore <= 1) return '#B4533A';
-      if (this.strengthScore === 2) return '#8A6A3A';
-      return '#3B6D11';
+      if (this.strengthScore <= 1) return '#DC5A54';
+      if (this.strengthScore === 2) return '#D9A03C';
+      return '#16A06A';
     }
   },
   methods: {
