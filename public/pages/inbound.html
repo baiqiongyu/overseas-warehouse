@@ -125,7 +125,9 @@
    新建 / 编辑弹窗：控制台式两栏
    左栏分段申报，右栏深色实时汇总（数字即账单雏形）
    ========================================================== */
-.inb-dlg { border-radius: 10px; overflow: hidden; }
+.inb-dlg { border-radius: 12px; overflow: hidden; box-shadow: 0 40px 90px -40px rgba(11, 33, 53, .35); }
+/* 弹窗遮罩减淡：不要压黑整页 */
+.el-dialog__wrapper .v-modal { opacity: .28 !important; background: #0B2135 !important; }
 .inb-dlg .el-dialog__header { padding: 16px 26px 14px; border-bottom: 1px solid var(--hairline); }
 .inb-dlg .el-dialog__title { font-size: 17px; letter-spacing: .02em; }
 .inb-dlg .el-dialog__headerbtn { top: 18px; right: 20px; }
@@ -342,8 +344,8 @@
 
 /* ---------- 右侧汇总（深色仪表盘） ---------- */
 .inb-side {
-  background: #F7FAFC; color: var(--ink);
-  border-left: 1px solid #E9EFF5;
+  background: #FBFCFE; color: var(--ink);
+  border-left: 1px solid #EFF4F9;
   padding: 20px 18px 16px; display: flex; flex-direction: column; gap: 0;
   overflow-y: auto;
 }
@@ -358,10 +360,10 @@
   display: flex; align-items: baseline; justify-content: space-between;
   padding: 10px 0; border-bottom: 1px dashed #E6EDF4;
 }
-.sum-row .k { font-size: 12.5px; color: var(--text-muted); }
+.sum-row .k { font-size: 12.5px; color: #8A9BAC; }
 .sum-row .v {
-  font-family: var(--font-body); font-weight: 700; font-size: 18px;
-  color: #0B2135; font-variant-numeric: tabular-nums;
+  font-family: var(--font-body); font-weight: 600; font-size: 17px;
+  color: #2C4354; font-variant-numeric: tabular-nums;
 }
 .sum-row .v small {
   font-family: var(--font-body); font-size: 11px; font-weight: 400;
@@ -384,11 +386,10 @@
 .gauge.hi + .gauge-ft { color: #C0554F; }
 .gauge-ft { font-size: 11px; color: var(--text-muted); margin-top: 7px; font-variant-numeric: tabular-nums; }
 .side-note {
-  margin-top: 14px; padding: 10px 12px;
-  background: #fff; border: 1px solid #E9EFF5; border-radius: 10px;
-  display: flex; flex-direction: column; gap: 5px;
+  margin-top: 12px; padding: 8px 10px;
+  background: #F5F9FC; border: 1px solid #EDF3F8; border-radius: 8px;
 }
-.side-note p { margin: 0; font-size: 11px; line-height: 1.65; color: var(--text-muted); }
+.side-note p { margin: 0; font-size: 11px; line-height: 1.6; color: #9AABBB; }
 .side-act { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; gap: 8px; }
 .side-act .btn-primary { width: 100%; height: 42px; background: var(--accent); color: #fff; letter-spacing: .08em; font-weight: 600; border-radius: 10px; }
 .side-act .btn-primary:hover, .side-act .btn-primary:focus-visible { background: var(--accent-ink); box-shadow: 0 10px 20px -12px rgba(13, 148, 136, .9); }
@@ -1009,10 +1010,7 @@
           </div>
 
           <div class="side-note">
-            <p>· 箱唛 = 订单号_箱号_序号，一箱一张</p>
-            <p>· 同箱号多箱自动编号 A_01…A_10</p>
-            <p>· 箱号留空自动编号 BOX001</p>
-            <p>· 同一箱内 SKU 不可重复</p>
+            <p>箱唛 = 订单号_箱号_序号；箱内 SKU 不可重复</p>
           </div>
 
           <div class="side-act">
